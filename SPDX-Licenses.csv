@@ -38,7 +38,7 @@ OpenMesh-8.1-rev3-windows,https://www.graphics.rwth-aachen.de/software/openmesh/
 OpenSSL-1.1.1b-rev2-windows,https://github.com/openssl/openssl,OpenSSL,OpenSSL/LICENSE
 PhysX-4.1.2.29882248-rev5-windows,https://github.com/NVIDIAGameWorks/PhysX,BSD-3-Clause,PhysX/LICENSE.md
 poly2tri-7f0487a-rev1-windows,https://github.com/jhasse/poly2tri,BSD-3-Clause,poly2tri/LICENSE
-pybind11-2.4.3-rev3-multiplatform,https://github.com/pybind/pybind11,BSD-3-Clause,pybind11/LICENSE
+pybind11-3.0.1-rev1-multiplatform,https://github.com/pybind/pybind11,BSD-3-Clause,pybind11/LICENSE
 pyside2-qt-5.15.1-rev2-windows,https://download.qt.io/official_releases/QtForPython/pyside2,custom,pyside2/LICENSES.txt
 qt-5.15.2-rev4-windows,https://code.qt.io/cgit/qt/qt5.git/,LGPL-3.0,qt/LICENSE
 RapidJSON-1.1.0-rev1-multiplatform,https://rapidjson.org,MIT,RapidJSON/license.txt

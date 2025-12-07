@@ -234,7 +234,7 @@
         "LicenseFile": "poly2tri/LICENSE"
     },
     {
-        "PackageName": "pybind11-2.4.3-rev3-multiplatform",
+        "PackageName": "pybind11-3.0.1-rev1-multiplatform",
         "URL": "https://github.com/pybind/pybind11",
         "License": "BSD-3-Clause",
         "LicenseFile": "pybind11/LICENSE"
