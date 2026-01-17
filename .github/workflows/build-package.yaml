@@ -143,7 +143,7 @@ jobs:
 
   build-on-specific-os:
     name: Build on "${{ matrix.os }}" for "${{ matrix.package }}"
-    needs: [detect-changes, validate-changes]
+    needs: [detect-changes]
     strategy:
       fail-fast: false
       matrix: ${{fromJson(needs.detect-changes.outputs.matrix)}}

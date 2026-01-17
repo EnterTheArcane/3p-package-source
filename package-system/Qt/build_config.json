@@ -11,7 +11,7 @@
     "Platforms": {
         "Windows": {
             "Windows": {
-                "package_version": "5.15.2-rev7",
+                "package_version": "5.15.18-rev1",
                 "patch_file": "qt-image-format-windows.patch",
                 "depends_on_packages": [
                     ["OpenSSL-1.1.1m-rev1-windows", "7d8d3904c70b7da471f777ee788678614a9b20d3ac926b7c0d60ccf2a17c7959", ""],
@@ -19,7 +19,7 @@
                     ["zlib-1.2.11-rev5-windows", "8847112429744eb11d92c44026fc5fc53caa4a06709382b5f13978f3c26c4cbd", ""]
                 ],
                 "additional_download_packages":[ 
-                    ["http://download.qt.io/official_releases/jom/jom.zip", "128fdd846fe24f8594eed37d1d8929a0ea78df563537c0c1b1861a635013fff8", "sha256"],
+                    ["http://download.qt.io/official_releases/jom/jom.zip", "89405212add992c35783fc5e938b2d7252d8447fde1dc64d335714325b54d668", "sha256"],
                     ["https://github.com/unicode-org/icu/releases/download/release-65-1/icu4c-65_1-Win64-MSVC2017.zip", "cfaf7477d65272e9e01c739951f0607642c0510235e46befc109f6a3addd4f43", "sha256"]
                 ],
                 "custom_build_cmd": [
@@ -33,7 +33,7 @@
         "Darwin": {
             "Mac": {
                 "cmake_find_source": "FindQt.cmake.mac",
-                "package_version": "5.15.2-rev8",
+                "package_version": "5.15.18-rev1",
                 "patch_file": "qt-mac.patch",
                 "depends_on_packages": [
                     ["tiff-4.2.0.15-rev3-mac", "c2615ccdadcc0e1d6c5ed61e5965c4d3a82193d206591b79b805c3b3ff35a4bf", ""],
@@ -49,7 +49,7 @@
         },
         "Linux": {
             "Linux": {
-                "package_version": "5.15.2-rev10",
+                "package_version": "5.15.18-rev1",
                 "patch_file": "qt-linux.patch",
                 "depends_on_packages": [
                     ["OpenSSL-1.1.1t-rev1-linux", "63aea898b7afe8faccd0c7261e62d2f8b7b870f678a4520d5be81e5815542b39", ""],
@@ -68,7 +68,7 @@
                 ]
             },
 	    "Linux-aarch64": {
-                "package_version": "5.15.2-rev10",
+                "package_version": "5.15.18-rev1",
                 "patch_file": "qt-linux.patch",
                 "depends_on_packages": [
                     ["OpenSSL-1.1.1t-rev1-linux-aarch64", "f32721bec9c82d1bd7fb244d78d5dc4e2a47e7b808bb36027236ad377e241ea5", ""],

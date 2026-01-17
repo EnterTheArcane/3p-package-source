@@ -13,18 +13,6 @@ set -euo pipefail
 export NINJAJOBS=-j12
 MAKE_FLAGS=-j32
 
-# Only Xcodebuilder 10.x or 11.x are known to build this version of Qt on mac successfully
-XCODEBUILD_VERSION=`xcodebuild -version | grep Xcode | awk '{print $2}'`
-XCODEBUILD_VERSION_MAJOR=`echo $XCODEBUILD_VERSION | awk -F. '{print $1}'`
-echo Xcodebuild version $XCODEBUILD_VERSION detected.
-if [ $XCODEBUILD_VERSION_MAJOR -gt "11" ]; then
-  echo Error: Xcodebuild version $XCODEBUILD_VERSION detected. Only Xcodebuild version 10 or 11 have been tested with this version of Qt
-  exit 1
-elif [ $XCODEBUILD_VERSION_MAJOR -lt "10" ]; then
-  echo Error: Xcodebuild version $XCODEBUILD_VERSION detected. Only Xcodebuild version 10 or 11 have been tested with this version of Qt
-  exit 1
-fi
-
 # TEMP_FOLDER and TARGET_INSTALL_ROOT get set from the pull_and_build_from_git.py script
 
 # Base the Tiff of the dependent tiff O3DE package (static)
