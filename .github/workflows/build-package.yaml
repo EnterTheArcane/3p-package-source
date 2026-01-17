@@ -3,6 +3,7 @@
 name: Build 3P Packages
 
 on:
+  push:
   pull_request:
     branches:
       - main

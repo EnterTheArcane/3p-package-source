@@ -246,7 +246,7 @@
         "LicenseFile": "pyside2/LICENSES.txt"
     },
     {
-        "PackageName": "qt-5.15.2-rev4-windows",
+        "PackageName": "qt-5.15.18-rev1-windows",
         "URL": "https://code.qt.io/cgit/qt/qt5.git/",
         "License": "LGPL-3.0",
         "LicenseFile": "qt/LICENSE"

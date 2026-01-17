@@ -26,24 +26,24 @@ To control the version and rev of the package, the entry for `package_version` i
 ```
         "Windows": {
             "Windows": {
-                "package_version": "5.15.2-rev7",
+                "package_version": "5.15.18-rev1",
                 ...
             }
         },
         "Darwin": {
             "Mac": {
                 ...
-                "package_version": "5.15.2-rev8",
+                "package_version": "5.15.18-rev1",
                 ...
             }
         },
         "Linux": {
             "Linux": {
-                "package_version": "5.15.2-rev10",
+                "package_version": "5.15.18-rev1",
                 ...
             },
 	        "Linux-aarch64": {
-                "package_version": "5.15.2-rev10",
+                "package_version": "5.15.18-rev1",
                 ...
             }
         }
@@ -66,24 +66,24 @@ The following build command line examples are based on the current values of the
 ### Windows
 
 ```
-python ..\3p-package-scripts\o3de_package_scripts\build_package.py --search_path . qt-5.15.2-rev10-windows
+python ..\3p-package-scripts\o3de_package_scripts\build_package.py --search_path . qt-5.15.18-rev1-windows
 ```
 
 ## Linux
 
 ### amd64
 ```
-python3 ../3p-package-scripts/o3de_package_scripts/build_package.py --search_path . qt-5.15.2-rev10-linux
+python3 ../3p-package-scripts/o3de_package_scripts/build_package.py --search_path . qt-5.15.18-rev1-linux
 ```
 
 ### aarch64
 ```
-python3 ../3p-package-scripts/o3de_package_scripts/build_package.py --search_path . qt-5.15.2-rev10-linux-aarch64
+python3 ../3p-package-scripts/o3de_package_scripts/build_package.py --search_path . qt-5.15.18-rev1-linux-aarch64
 ```
 
 ## Mac
 
 ```
-python3 ../3p-package-scripts/o3de_package_scripts/build_package.py --search_path . qt-5.15.2-rev8-mac
+python3 ../3p-package-scripts/o3de_package_scripts/build_package.py --search_path . qt-5.15.18-rev1-mac
 
 ```

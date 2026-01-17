@@ -9,7 +9,7 @@ REM SPDX-License-Identifier: Apache-2.0 OR MIT
 REM 
 
 REM Set these before running the script
-if not defined VCVARS_PATH set VCVARS_PATH="C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Auxiliary\Build\vcvars64.bat"
+if not defined VCVARS_PATH set VCVARS_PATH="C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
 if not defined QTARRAY set QTARRAY=(qtbase,qtgraphicaleffects,qtimageformats,qtsvg,qttools,qtwinextras)
 
 REM TEMP_FOLDER and TARGET_INSTALL_ROOT get set from the pull_and_build_from_git.py script
@@ -23,7 +23,7 @@ for %%P IN (VCVARS_PATH,TEMP_FOLDER,TARGET_INSTALL_ROOT) do (
 
 if %CHECKS_FAILED%==1 goto FAILURE
 
-echo Setting up VS2019
+echo Setting up VS2022
 call %VCVARS_PATH% amd64
 
 REM We need jom and ICU to build on Windows
