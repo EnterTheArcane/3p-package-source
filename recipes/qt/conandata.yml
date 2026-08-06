@@ -1,0 +1,10 @@
+sources:
+  6.10.2:
+    url: "https://download.qt.io/archive/qt/6.10/6.10.2/single/qt-everywhere-src-6.10.2.tar.xz"
+    sha256: "c3df0f0e421130cc52ed81cb712358804471ce9bd2a41d97828f9f5b1bf7fed2"
+
+patches:
+  6.10.2:
+    - patch_file: "recursion-check.patch"
+      patch_description: "Normalise and de-duplicate visited directories when collecting build system targets"
+      patch_type: "portability"

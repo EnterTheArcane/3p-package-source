@@ -1,0 +1,4 @@
+version: 1.5.7
+rev: 1
+targets: [zstd]
+platforms: all

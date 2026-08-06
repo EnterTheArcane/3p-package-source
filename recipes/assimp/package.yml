@@ -1,0 +1,4 @@
+version: 5.4.3
+rev: 1
+targets: [assimp]
+platforms: desktop

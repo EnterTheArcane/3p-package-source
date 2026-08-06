@@ -1,0 +1,5 @@
+sources:
+  5.1.1:
+    # Pinned to a commit: release/104.1 is a branch and would otherwise move underneath us.
+    url: "https://github.com/o3de/PhysX/archive/60e7d82a3856740881d0c892a01df7fd4e0676f6.tar.gz"
+    sha256: "5e6d268fa7a1eb101affe5f17acb3932a992b935ffc84aa3849b57ebcbd5a758"

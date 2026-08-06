@@ -1,0 +1,4 @@
+version: 0.8.3
+rev: 1
+targets: [xxhash]
+platforms: desktop

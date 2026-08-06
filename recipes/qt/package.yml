@@ -1,0 +1,5 @@
+version: 6.10.2
+rev: 1
+targets: [Qt]
+platforms: desktop
+payload: qt

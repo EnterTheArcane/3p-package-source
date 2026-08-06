@@ -1,0 +1,9 @@
+# Packages you are currently editing.
+#
+# A package listed here is used from its source directory instead of being built into
+# the Conan cache, which is what you want while iterating on a recipe and never what you
+# want when producing packages. Keep this empty on main.
+#
+#   conan workspace add recipes/qt      start editing
+#   conan workspace remove recipes/qt   go back to cache builds
+packages: []

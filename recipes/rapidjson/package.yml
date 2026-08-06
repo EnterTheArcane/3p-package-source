@@ -1,0 +1,4 @@
+version: cci.20250205
+rev: 1
+targets: [RapidJSON]
+platforms: all

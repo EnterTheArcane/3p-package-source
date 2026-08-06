@@ -1,0 +1,18 @@
+# Cross-compiled from a Linux host. The NDK comes from Conan, not the host.
+
+include(_common)
+
+[settings]
+os=Android
+os.api_level=24
+arch=x86_64
+compiler=clang
+compiler.version=18
+compiler.cppstd=20
+compiler.libcxx=c++_shared
+
+[options]
+*:fPIC=True
+
+[tool_requires]
+android-ndk/r27c

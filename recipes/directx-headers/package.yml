@@ -1,0 +1,4 @@
+version: 1.619.1
+rev: 1
+targets: [d3dx12]
+platforms: windows

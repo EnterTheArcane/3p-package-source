@@ -1,0 +1,37 @@
+version: 3.1.16.0
+rev: 1
+targets: [OpenImageIO]
+platforms: tools
+# The engine also asks for 3rdParty::OpenImageIO::Tools::Binaries and
+# ::Tools::PythonPlugins. Only the first element of a target path is looked up as a
+# package, so registering OpenImageIO alone is enough; the config file below defines
+# the sub-targets.
+
+# Conan Center turns on every format backend it supports. The engine reads and writes
+# ordinary image formats, and pulling in ffmpeg in particular would put a large codec
+# stack, and its licensing, into a package that ships with the engine.
+options:
+  # Shared, as the engine has always consumed it. A static OpenImageIO would put every
+  # one of its private dependencies on the engine's link line.
+  shared: true
+  with_ffmpeg: false
+  with_libjxl: false
+  with_libheif: false
+  with_libwebp: false
+  with_libultrahdr: false
+  with_raw: false
+  with_openjpeg: false
+  with_openjph: false
+  with_openvdb: false
+  with_ptex: false
+  with_dicom: false
+  with_opencv: false
+  with_tbb: false
+
+# OpenImageIO's public headers include <fmt/format.h>: Conan Center's recipe turns off
+# the option that would vendor fmt into OpenImageIO's own headers, and exports fmt as a
+# transitive header dependency instead. Nothing else in the engine wants fmt, so it
+# travels inside this package rather than becoming another entry to pin. Imath is
+# here for the same reason: OpenImageIO/half.h includes <Imath/half.h> with no
+# guard, and the gems that use OpenImageIO do not otherwise link OpenEXR.
+bundle: [fmt, imath]

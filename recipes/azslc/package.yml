@@ -1,0 +1,4 @@
+version: 1.8.22
+rev: 1
+targets: [azslc]
+platforms: desktop

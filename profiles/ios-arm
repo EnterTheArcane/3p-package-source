@@ -1,0 +1,16 @@
+# Cross-compiled from a macOS host.
+
+include(_common)
+
+[settings]
+os=iOS
+os.version=14.0
+os.sdk=iphoneos
+arch=armv8
+compiler=apple-clang
+compiler.version=17
+compiler.cppstd=20
+compiler.libcxx=libc++
+
+[options]
+*:fPIC=True

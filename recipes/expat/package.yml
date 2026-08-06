@@ -1,0 +1,6 @@
+version: 2.8.2
+rev: 1
+targets: [expat]
+platforms: core
+aliases:
+  expat: [expat::expat]

@@ -1,0 +1,4 @@
+version: deb557d
+rev: 1
+targets: [squish-ccr]
+platforms: desktop

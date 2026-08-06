@@ -10,3 +10,16 @@ qt_compile_log.txt
 .remote_cache.json
 .venv/
 build.log
+build/
+
+# Running `conan source` or `conan build` against a recipe folder materialises the
+# downloaded source and build tree next to the recipe. Recipes hold instructions, never
+# upstream sources.
+recipes/*/src/
+recipes/*/build/
+
+# Conan writes environment scripts into the working directory. tools/3rdparty.py
+# redirects them, but `conan create` run by hand from the repo root leaves them behind.
+conanbuild*
+conanrun*
+deactivate_conan*

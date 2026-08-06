@@ -1,0 +1,4 @@
+version: 5.4.4
+rev: 1
+targets: [Lua]
+platforms: core

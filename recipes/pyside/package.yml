@@ -1,0 +1,6 @@
+version: 6.10.2
+rev: 1
+targets: [pyside6]
+platforms: tools
+# The curated config expects the historic payload directory name.
+payload: pyside6

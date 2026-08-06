@@ -1,0 +1,5 @@
+version: 5.1.1
+rev: 1
+targets: [PhysX5]
+platforms: desktop
+payload: PhysX

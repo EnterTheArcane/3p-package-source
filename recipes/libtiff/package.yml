@@ -1,0 +1,18 @@
+version: 4.7.2
+rev: 1
+targets: [TIFF]
+platforms: core
+aliases:
+  TIFF: [TIFF::TIFF]
+
+# Only zlib, which ships as its own package. The other codecs are optional and pull in
+# static libraries that would otherwise have to be bundled here; the previous package
+# shipped libtiff.a alone for the same reason.
+options:
+  jpeg: false
+  lzma: false
+  libdeflate: false
+  zstd: false
+  jbig: false
+  webp: false
+  zlib: true

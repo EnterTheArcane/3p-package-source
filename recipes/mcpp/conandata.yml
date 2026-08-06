@@ -1,0 +1,14 @@
+sources:
+  2.7.2:
+    url: "https://sourceforge.net/projects/mcpp/files/mcpp/V.2.7.2/mcpp-2.7.2.tar.gz/download"
+    sha256: "3b9b4421888519876c4fc68ade324a3bbd81ceeb7092ecdbbc2055099fcb8864"
+    # The URL ends in /download, so the archive type has to be stated outright.
+    filename: "mcpp-2.7.2.tar.gz"
+
+patches:
+  # Keyed by the recipe version, which carries the fork suffix, or the patch is
+  # silently skipped and the package builds as stock mcpp.
+  2.7.2_az.2:
+    - patch_file: "patches/mcpp_2.7.2_az.patch"
+      patch_description: "O3DE fork: C++ linkage, renamed macros, and an include-report callback"
+      patch_type: "conan"

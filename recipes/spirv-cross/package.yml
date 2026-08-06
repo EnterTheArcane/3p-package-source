@@ -1,0 +1,4 @@
+version: 1.4.350.0
+rev: 1
+targets: [SPIRVCross]
+platforms: desktop

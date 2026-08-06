@@ -1,0 +1,15 @@
+sources:
+  deb557d:
+    url: "https://github.com/Ethatron/squish-ccr/archive/deb557d2fa647b191b37a2d8682df54ec8a7cfba.tar.gz"
+    sha256: "5b578a95b339a99af3fc31116b159118c2fad8568388f824bbdfacba00afa7f3"
+
+patches:
+  deb557d:
+    - patch_file: "patches/squish-ccr-deb557d-rev1.patch"
+      patch_description: "O3DE build fixes; upstream does not compile as-is on current toolchains"
+      patch_type: "portability"
+
+# ARM builds translate the SSE intrinsics with sse2neon, exactly as the previous build did.
+sse2neon:
+  url: "https://github.com/DLTcollab/sse2neon/archive/refs/tags/v1.6.0.tar.gz"
+  sha256: "06f4693219deccb91b457135d836fc514a1c0a57e9fa66b143982901d2d19677"

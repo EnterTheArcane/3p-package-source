@@ -1,0 +1,142 @@
+{
+    "version": "0.5",
+    "requires": [
+        "zstd/1.5.7#b68ca8e3de04ba5957761751d1d661f4%1760955092.069",
+        "zlib/1.3.1#cac0f6daea041b0ccf42934163defb20%1765284699.337",
+        "yaml-cpp/0.8.0#1aa371213f0307605d88ad5445581aff%1773246038.815",
+        "xz_utils/5.8.3#a8432fead347c69d8b2737c35f936132%1775752656.4",
+        "xxhash/0.8.3#7bcc17de69e5b5ea920a874fe1b3d1da",
+        "utfcpp/4.0.1#e879ce0ad3e77ff6e04713ada5549655%1722968965.538",
+        "tsl-robin-map/1.2.1#760934a48af36aaa43a1366f1dc34bd3%1753346726.696",
+        "stb/cci.20230920#ed79bd361e974a99137f214efb117eef%1720366013.319",
+        "sse2neon/1.9.1#623d19a1b7986093d25d364e697be4cc%1782816790.317",
+        "squish-ccr/deb557d#284ebff5a7344679b63d91631c92574e",
+        "sqlite3/3.53.4#89fcf5cda598966acb7f3e185b19c58d%1785239491.603",
+        "spirv-cross/1.4.350.0#904299c8c5fd6cbe677e09fb9ce8ff5f%1778774679.723",
+        "rapidxml/1.13#23c60d7e376e5f9c6eb71dd9017887a9",
+        "rapidjson/cci.20250205#dc3e0ac7034c35032b107673d9f9bae3%1771489101.751",
+        "qt/6.10.2#5d646b5dc3532b5e48d0db62fcf7e0d1",
+        "python/3.10.13#639e43baa358de6142f04c128c54cc6a",
+        "pystring/1.1.4#ca23c56b96bc4310ae2b3d7e215bf9a3%1741858833.459",
+        "pyside/6.10.2#29ec3a5fe3fb044caa6e1c780d2f529e",
+        "pybind11/2.13.6#42746850cd4c68d1b1ea42de456c2182%1755673714.548",
+        "pugixml/1.14#6b0b93a0676c40e5204decd48fedba68%1782305327.444",
+        "poly2tri/cci.20130502#003141589c1a86aaa9e7cd8dcd05af73%1741858831.013",
+        "physx/5.1.1#b94e58a6eaaa25178e84c7064c18774c",
+        "openssl/3.6.3#a81313131c78c6414f25b5fe0a83204b%1783446193.901",
+        "openjph/0.30.1#df4cbcd67db4d36920ae500608af7b28%1782276894.819",
+        "openimageio/3.1.16.0#84ed717f8f1fa72f0ded67b24f179473%1785710982.791",
+        "openexr/3.4.13#693ef2e0b76318ccc365ca4b024c50ec%1782274845.058",
+        "openddl-parser/0.5.1#1ed71b6fc636be990a506c802bf64831%1695253156.782",
+        "opencolorio/2.5.2#1757a78ecbf2a76deb651f8729f6c7d4%1782809282.693",
+        "nvcloth/1.1.6#0f47ff45f1739f9fbea7cfb330f1a154",
+        "minizip-ng/4.2.1#61fc65e7b4ecff3d903946f9d534c50a%1777643608.431",
+        "minizip/1.2.13#36a63ce67bc469165d8811cd5249044c%1784569254.405",
+        "mikktspace/cci.20200325#dd612eebed70e78079acc3c8b97d6d89",
+        "mcpp/2.7.2_az.2#0bf863927ab59ab44bcdc04d2b4e5a8c",
+        "lz4/1.10.0#982d9b673900f665a1da109e09c17cab%1775037240.923",
+        "lua/5.4.4#c236134b661c9faa8c6b8f68e74b2f26",
+        "libtiff/4.7.2#7283595b6a38d0781953fa63881e0e92%1783597163.469",
+        "libsquish/1.15#7f943e7d0ee7fc638d554d7a470a5f6c%1707142005.713",
+        "libsamplerate/0.2.2#eebe3845fb3bb08393c1f3889dc1afca%1777370092.812",
+        "libpng/1.6.58#19cb72905ae54f54948401f753faa2c1%1776606503.628",
+        "libjpeg/9f#8b1b89da851ad9172565c35f14e23c4c%1780476337.068",
+        "libiconv/1.17#9923bc6dc6f106646d6967e0039a5ada%1774021608.288",
+        "libdeflate/1.25#49fcd3fe6c130c2ec5a01cabb0481ded%1761981110.678",
+        "lcms/2.19.1#a6579472795f0cd5578ff9f6511f8b80%1783337105.374",
+        "kuba-zip/0.3.0#a94374066e7536ed2edeece35a18af59%1743413289.07",
+        "ispc-texcomp/36b80aa#0df32af0ada39130a667c5f1f3352630",
+        "imath/3.2.2#d5203a84ee631ae6ab2da7c3a6b16787%1775543416.311",
+        "glad/2.0.0-beta#46b767ae3b7d00a4fa94752b50c8f62b",
+        "giflib/5.2.1#9e55a2df51840c3a70116e15fdf60a52%1773315756.874",
+        "getopt-for-visual-studio/20200201#32ee360e2552fe65ad8bec52edcd64fd%1678877536.186",
+        "freetype/2.14.3#b74da2c393fdac2d3bffd9301c3dd119%1780212914.7245388",
+        "fmt/12.2.0#b445244e6d0151a425e229248cd2bed8%1785754552.386",
+        "expat/2.8.2#47bed4455ba060e4104dc20d6a448c34%1782406491.478",
+        "dxc/1.8.2505.1-o3de#72215e549559868999d478b926638c9b",
+        "draco/1.5.7#473961560821865c79deb9fa007e1641%1784010407.075",
+        "directx-headers/1.619.1#e26424754cf25d87108942601f210bef%1779707631.025",
+        "clipper/6.4.2#2eb7263b5ad1225edddca68a6f93c11d%1743005731.021",
+        "civetweb/1.16#f4a42c8aa0bc0fe4bbe2a2270af0cea2%1750148475.207",
+        "cityhash/cci.20130801#60d7fcb16cbac5004d688486161ba05d%1680303331.334",
+        "bzip2/1.0.8#c470882369c2d95c5c77e970c0c7e321%1762886692.465",
+        "brotli/1.1.0#3f631ef77008f7b5eb388780116371a3%1764862343.045",
+        "benchmark/1.7.1#4109a294916cdfe48950e68a80b19dc4%1724323742.201",
+        "azslc/1.8.22#cc6194b27863312ad3f08dcb2d9c2d95",
+        "astc-encoder/3.2#144dd433ee43a1876954656091544141",
+        "assimp/5.4.3#fcc8f5f0c12efc914decb4759082c84e%1784010412.281"
+    ],
+    "build_requires": [
+        "pkgconf/2.5.1#93c2051284cba1279494a43a4fcfeae2%1757684701.089",
+        "nodejs/16.3.0#a7eaed2d69910ba185e2ddce7a926cd1%1699800365.225",
+        "ninja/1.13.2#c8c5dc2a52ed6e4e42a66d75b4717ceb%1764096931.974",
+        "meson/1.10.2#9d2d10681fe7fe61c788c58626c89b25%1775558003.754",
+        "m4/1.4.19#34c4bbc3eeebe98ca6edf2f52d602e7d%1777282960.259",
+        "libtool/2.4.7#14e7739cc128bc1623d2ed318008e47e%1755679003.847",
+        "libclang/20.1.3#0e3773ab0bd16c21de4208066d4c5be0%1785904073.052171",
+        "gnu-config/cci.20210814#466e9d4d7779e1c142443f7ea44b4284%1762363589.329",
+        "emsdk/3.1.73#7dd9b10cfb811b620856f87c3a71c070%1733421474.308",
+        "cmake/4.3.2#5bae0b181463ca4dc3e924a981367ee6%1779785720.872",
+        "cmake/3.31.12#173a926abc2b77f03c826b6fd6539426%1779785723.158",
+        "automake/1.16.5#b91b7c384c3deaa9d535be02da14d04f%1755524470.56",
+        "autoconf/2.71#51077f068e61700d65bb05541ea1e4b0%1731054366.86",
+        "android-ndk/r27c#c27dde0599b1c7f1d4f3b79537e82839%1739353780.256"
+    ],
+    "python_requires": [],
+    "overrides": {
+        "openssl/3.6.3#a81313131c78c6414f25b5fe0a83204b": [
+            null,
+            "openssl/3.6.3#a81313131c78c6414f25b5fe0a83204b"
+        ],
+        "poly2tri/cci.20130502#003141589c1a86aaa9e7cd8dcd05af73": [
+            null,
+            "poly2tri/cci.20130502"
+        ],
+        "python/3.10.13#639e43baa358de6142f04c128c54cc6a": [
+            null,
+            "python/3.10.13"
+        ],
+        "qt/6.10.2#5d646b5dc3532b5e48d0db62fcf7e0d1": [
+            null,
+            "qt/6.10.2"
+        ],
+        "zlib/1.3.1#cac0f6daea041b0ccf42934163defb20": [
+            null,
+            "zlib/1.3.1#cac0f6daea041b0ccf42934163defb20"
+        ],
+        "zlib/[>=1.2.11 <2]": [
+            "zlib/1.3.1"
+        ],
+        "rapidjson/cci.20230929": [
+            "rapidjson/cci.20250205"
+        ],
+        "openssl/[>=1 <4]": [
+            "openssl/3.6.3"
+        ],
+        "libpng/[>=1.6 <2]": [
+            "libpng/1.6.58"
+        ],
+        "libtiff/[>=4.6.0 <5]": [
+            "libtiff/4.7.2"
+        ],
+        "openexr/[>=3.2.3 <4]": [
+            "openexr/3.4.13"
+        ],
+        "freetype/2.13.2": [
+            "freetype/2.14.3"
+        ],
+        "expat/[>=2.6.2 <3]": [
+            "expat/2.8.2"
+        ],
+        "openexr/[>=3.3.2 <4]": [
+            "openexr/3.4.13#693ef2e0b76318ccc365ca4b024c50ec"
+        ],
+        "zstd/[>=1.5.5 <2]": [
+            "zstd/1.5.7"
+        ],
+        "openssl/[>=1.1 <4]": [
+            "openssl/3.6.3"
+        ]
+    },
+    "config_requires": []
+}

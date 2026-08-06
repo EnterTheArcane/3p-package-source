@@ -1,0 +1,33 @@
+# Official LLVM release binaries. Names and hashes come from the GitHub release assets;
+# the API publishes a sha256 digest for each, so nothing here was hand computed.
+#
+# 20.x on purpose, and this was measured rather than assumed. Built against llvm 22.1.8,
+# Shiboken resolves QDirListing::IteratorFlag onto QDirIterator's enum of the same name
+# and emits a wrapper referencing QDirIterator::IteratorFlag::Default, which does not
+# exist, so QtCore fails to compile:
+#
+#   qdirlisting_wrapper.cpp:137:86: error: no type named 'Default' in
+#   'QDirIterator::IteratorFlag'
+#
+# Revisit when PySide releases against a newer libclang; bump the version here and in
+# the recipe's version attribute together.
+sources:
+  20.1.8:
+    Macos:
+      armv8:
+        url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.8/LLVM-20.1.8-macOS-ARM64.tar.xz"
+        sha256: "a9a22f450d35f1f73cd61ab6a17c6f27d8f6051d56197395c1eb397f0c9bbec4"
+    Linux:
+      x86_64:
+        url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.8/LLVM-20.1.8-Linux-X64.tar.xz"
+        sha256: "1ead36b3dfcb774b57be530df42bec70ab2d239fbce9889447c7a29a4ddc1ae6"
+      armv8:
+        url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.8/LLVM-20.1.8-Linux-ARM64.tar.xz"
+        sha256: "b855cc17d935fdd83da82206b7a7cfc680095efd1e9e8182c4a05e761958bef8"
+    Windows:
+      x86_64:
+        url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.8/clang+llvm-20.1.8-x86_64-pc-windows-msvc.tar.xz"
+        sha256: "f229769f11d6a6edc8ada599c0cda964b7dee6ab1a08c6cf9dd7f513e85b107f"
+      armv8:
+        url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.8/clang+llvm-20.1.8-aarch64-pc-windows-msvc.tar.xz"
+        sha256: "0df3e81e8fe26370dd2b60b9e009d81cd130d3fdc41b257434aa663c5d9f0c13"

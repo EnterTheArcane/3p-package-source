@@ -1,0 +1,50 @@
+name: Refresh lockfile
+
+# conan.lock pins the exact recipe revision used for every dependency, including the
+# ones Conan Center resolves transitively. Refreshing it is a reviewable change that
+# the build workflow then has to prove on every platform.
+on:
+  schedule:
+    - cron: '0 6 1 * *'
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Conan
+        run: pip install "conan==2.31.*"
+
+      # One lockfile covers every platform: each graph is added to the same file so a
+      # dependency shared by several targets cannot drift between them.
+      - name: Rebuild the lockfile
+        run: |
+          set -euo pipefail
+          rm -f conan.lock
+          for profile in profiles/*; do
+            name="$(basename "$profile")"
+            [ "$name" = "_common" ] && continue
+            echo "::group::$name"
+            conan lock create consumer/conanfile.py \
+              -pr:h "$profile" -pr:b profiles/linux-x64 \
+              --lockfile-out=conan.lock \
+              $( [ -f conan.lock ] && echo "--lockfile=conan.lock --lockfile-partial" )
+            echo "::endgroup::"
+          done
+
+      - uses: peter-evans/create-pull-request@v6
+        with:
+          branch: third-party/refresh-lockfile
+          commit-message: 'Refresh the Conan lockfile'
+          title: 'Refresh the Conan lockfile'
+          body: |
+            Regenerated `conan.lock` across every platform profile.
+
+            Merging this moves the pinned dependency revisions forward. The build
+            workflow on this pull request is what proves the new set still builds.

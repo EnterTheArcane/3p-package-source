@@ -1,0 +1,4 @@
+version: cci.20130801
+rev: 1
+targets: [cityhash]
+platforms: all

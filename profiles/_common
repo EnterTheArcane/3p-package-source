@@ -1,0 +1,38 @@
+# Shared settings for every target platform.
+# Included by all profiles in this directory; do not use directly.
+
+# compiler.cppstd belongs in each platform profile: a subsetting cannot be set
+# here, before the including profile defines the compiler itself.
+
+[settings]
+build_type=Release
+
+[conf]
+tools.cmake.cmaketoolchain:generator=Ninja
+tools.build:skip_test=True
+
+# Conan drops the binaries of static dependencies that a shared library has already
+# absorbed. That is right for building and wrong for us: the deployer reads package
+# folders to assemble a package, and a skipped node has none, so a bundled dependency
+# resolves to nothing and ships as a library the engine then cannot link against.
+# OpenEXR lost openjph this way whenever it was deployed alongside OpenImageIO.
+tools.graph:skip_binaries=False
+
+# openimageio's with_libwebp option does not work. Conan Center's recipe sets
+# USE_LIBWEBP, but OpenImageIO gates on USE_WEBP/ENABLE_WebP (see its
+# src/cmake/check_is_enabled.cmake), so the option matches nothing, CMake finds whatever
+# WebP the build machine happens to have, and the shipped library ends up depending on
+# it by absolute path. Setting the name OpenImageIO actually reads closes that hole.
+openimageio/*:tools.cmake.cmaketoolchain:extra_variables={"USE_WEBP": "OFF"}
+
+# Several long stable libraries still declare cmake_minimum_required below 3.5, which
+# CMake 4 refuses outright. This keeps them configurable without forking their recipes.
+[buildenv]
+CMAKE_POLICY_VERSION_MINIMUM=3.5
+
+# freetype requires zlib-ng rather than zlib and offers no option to choose. Left alone
+# it would put a second compression library into the engine, and one we do not ship, so
+# freetype would link against symbols that never arrive. zlib-ng is API compatible, so
+# point it at the zlib we do ship. Keep this version matching the catalog entry.
+[replace_requires]
+zlib-ng/*: zlib/1.3.1

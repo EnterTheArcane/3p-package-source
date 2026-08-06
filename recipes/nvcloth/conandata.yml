@@ -1,0 +1,17 @@
+# The commit O3DE has always built, from NvCloth's master branch. Note this is not the
+# 1.1.6 release branch that Conan Center packages: master moved the callback interfaces
+# into the nv::cloth namespace and the release branch left them in physx, and the engine
+# derives from nv::cloth::PxAssertHandler.
+sources:
+  1.1.6:
+    url: "https://github.com/NVIDIAGameWorks/NvCloth/archive/6e86b1838ae185c527744d475d34777ff69c1b8a.tar.gz"
+    sha256: "09bbaaa4093a6df2a4629b9c0423e92eae4d8e4f4e725373be31248a063325ca"
+
+patches:
+  1.1.6:
+    # Adds the Apple arm64 build to NvCloth's mac and ios cmake, and stops the NEON
+    # solver kernel from being included as a source file twice. Taken from the previous
+    # build, where it was nvcloth_mac_arm64.patch.
+    - patch_file: "patches/o3de-apple-arm64.patch"
+      patch_description: "Apple arm64 support"
+      patch_type: "portability"

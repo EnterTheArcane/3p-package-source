@@ -1,0 +1,16 @@
+# Cross-compiled from a Linux host. The toolchain comes from Conan, not the host.
+
+include(_common)
+
+[settings]
+os=Emscripten
+arch=wasm
+compiler=clang
+compiler.version=18
+compiler.cppstd=20
+compiler.libcxx=libc++
+
+[tool_requires]
+# emsdk and its own dependency chain are excluded, otherwise they require emsdk
+# to build themselves and the graph cycles.
+!(emsdk/*|nodejs/*): emsdk/3.1.73

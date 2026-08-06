@@ -1,0 +1,4 @@
+version: 2.7.2_az.2
+rev: 1
+targets: [mcpp]
+platforms: desktop

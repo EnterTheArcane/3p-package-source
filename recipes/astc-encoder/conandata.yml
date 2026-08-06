@@ -1,0 +1,4 @@
+sources:
+  "3.2":
+    url: "https://github.com/ARM-software/astc-encoder/archive/refs/tags/3.2.tar.gz"
+    sha256: "ed24d600b3b18178df3c6375e2ba8f256ccfc1f20e57863f2f21a1c9e39f820e"

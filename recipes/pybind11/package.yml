@@ -1,0 +1,4 @@
+version: 2.13.6
+rev: 1
+targets: [pybind11]
+platforms: desktop

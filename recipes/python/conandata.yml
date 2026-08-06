@@ -1,0 +1,4 @@
+sources:
+  3.10.13:
+    url: "https://github.com/python/cpython/archive/refs/tags/v3.10.13.tar.gz"
+    sha256: "aa71a8522860c455d149e62f175522fbca8a26d09f61e92668c4aa76e60392cf"

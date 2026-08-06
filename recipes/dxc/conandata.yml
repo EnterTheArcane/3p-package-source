@@ -1,0 +1,5 @@
+patches:
+  1.8.2505.1-o3de:
+    - patch_file: "patches/no-std-trait-specialization.patch"
+      patch_description: "Drop the illegal std::is_nothrow_constructible specialisation in StringRef"
+      patch_type: "portability"

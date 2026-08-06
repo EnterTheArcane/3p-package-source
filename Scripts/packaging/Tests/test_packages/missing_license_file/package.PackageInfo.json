@@ -1,6 +1,0 @@
-{
-    "PackageName" : "package_with_no_license_file",
-    "URL"         : "https://example.com",
-    "License"     : "MIT",
-    "LicenseFile" : "LICENSE.txt"
-}
