@@ -1,4 +1,4 @@
-name: Promote packages
+name: Promote
 
 # Publishing is deliberately separate from building. Packages are uploaded to the
 # development bucket, the engine gets a pull request pinning the new hashes, and only
@@ -7,17 +7,16 @@ on:
   workflow_dispatch:
     inputs:
       run_id:
-        description: 'Build workflow run to promote (blank uses the latest on this branch)'
+        description: Build workflow run to promote (blank uses the latest on this branch)
         required: false
         type: string
   push:
     branches: [main]
     paths:
-      - 'recipes/**'
-      - 'profiles/**'
-      - 'consumer/**'
-      - 'recipes/**'
-      - 'conan.lock'
+      - recipes/**
+      - profiles/**
+      - consumer/**
+      - conan.lock
 
 concurrency:
   group: promote-${{ github.ref }}
@@ -25,16 +24,18 @@ concurrency:
 
 jobs:
   publish-development:
+    name: Publish Development
     runs-on: ubuntu-24.04
     environment: development
     outputs:
       platforms: ${{ steps.collect.outputs.platforms }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       # Artifacts come from the build workflow rather than being rebuilt, so what gets
       # published is exactly what was validated.
-      - name: Download built packages
+      - name: Download Artifact
         uses: actions/download-artifact@v4
         with:
           pattern: packages-*
@@ -43,12 +44,13 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ inputs.run_id || github.run_id }}
 
-      - uses: actions/setup-python@v5
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
-      - id: collect
-        name: Summarise what was downloaded
+      - name: Collect Platforms
+        id: collect
         run: |
           shopt -s nullglob
           found=()
@@ -63,21 +65,22 @@ jobs:
           printf 'platforms=%s\n' "$(printf '%s\n' "${found[@]}" | jq -R . | jq -sc .)" >> "$GITHUB_OUTPUT"
           printf 'Found %d platform(s): %s\n' "${#found[@]}" "${found[*]}"
 
-      - name: Validate before publishing
+      - name: Validate Packages
         run: |
           for dir in packages/packages-*; do
             python3 tools/validate_package.py "$dir"
           done
 
-      - name: Refuse to overwrite published packages
+      - name: Check Published Packages
+        env:
+          PROD_CDN: ${{ vars.PROD_CDN }}
         run: |
           for dir in packages/packages-*; do
             python3 .github/scripts/check_published.py "$dir"
           done
-        env:
-          PROD_CDN: ${{ vars.PROD_CDN }}
 
-      - uses: aws-actions/configure-aws-credentials@v4
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_CREDS_ACCESS_KEY }}
           aws-secret-access-key: ${{ secrets.AWS_CREDS_SECRET_KEY }}
@@ -85,7 +88,7 @@ jobs:
 
       # PackageInfo.json is uploaded last: it is what marks a package as complete, so a
       # failure part way through never leaves a package that looks ready but is not.
-      - name: Upload to the development bucket
+      - name: Upload To Development
         run: |
           set -euo pipefail
           bucket="s3://${{ secrets.AWS_PACKAGE_DEV_S3_BUCKET }}"
@@ -101,44 +104,50 @@ jobs:
           done
 
   update-engine:
+    name: Update Engine
     needs: publish-development
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           path: packaging
 
-      - uses: actions/checkout@v4
+      - name: Checkout Engine
+        uses: actions/checkout@v4
         with:
           repository: o3de/o3de
           ref: development
           token: ${{ secrets.GHA_TOKEN }}
           path: engine
 
-      - uses: actions/download-artifact@v4
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
         with:
           pattern: packages-*
           path: packages
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ inputs.run_id || github.run_id }}
 
-      - uses: actions/setup-python@v5
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
-      - name: Rewrite the engine's package lists
+      - name: Update Package Lists
         run: |
           python3 packaging/tools/gen_builtin_packages.py \
             packages/packages-* --engine engine --write
 
-      - uses: peter-evans/create-pull-request@v6
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.GHA_TOKEN }}
           path: engine
           branch: third-party/update-packages
           draft: true
-          commit-message: 'Update third party packages'
-          title: 'Update third party packages'
+          commit-message: Update third party packages
+          title: Update third party packages
           body: |
             Generated by the third party package pipeline.
 
@@ -149,17 +158,20 @@ jobs:
             Built from ${{ github.repository }}@${{ github.sha }}.
 
   publish-production:
+    name: Publish Production
     needs: [publish-development, update-engine]
     runs-on: ubuntu-24.04
     environment: production
     steps:
-      - uses: aws-actions/configure-aws-credentials@v4
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_CREDS_ACCESS_KEY }}
           aws-secret-access-key: ${{ secrets.AWS_CREDS_SECRET_KEY }}
           aws-region: ${{ secrets.AWS_CREDS_REGION_NAME }}
 
-      - uses: actions/download-artifact@v4
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
         with:
           pattern: packages-*
           path: packages
@@ -168,7 +180,7 @@ jobs:
 
       # A server side copy of the exact objects that were validated and published to
       # development. Production never sees a separately built artifact.
-      - name: Copy from development to production
+      - name: Copy To Production
         run: |
           set -euo pipefail
           dev="s3://${{ secrets.AWS_PACKAGE_DEV_S3_BUCKET }}"

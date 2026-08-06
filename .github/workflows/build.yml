@@ -1,33 +1,30 @@
-name: Build packages
+name: Build
 
-# Conan decides what actually needs building: with the cache restored, a package whose
-# recipe and dependencies are unchanged is reused rather than rebuilt. That replaces the
-# old scheme of hand editing a list of package names to trigger work.
 on:
   pull_request:
     branches: [main, development]
     paths:
-      - 'recipes/**'
-      - 'profiles/**'
-      - 'consumer/**'
-      - 'extensions/**'
-      - 'tools/**'
-      - 'conan.lock'
-      - '.github/**'
+      - recipes/**
+      - profiles/**
+      - consumer/**
+      - extensions/**
+      - tools/**
+      - conan.lock
+      - .github/**
   push:
     branches: [main, development]
     paths:
-      - 'recipes/**'
-      - 'profiles/**'
-      - 'consumer/**'
-      - 'extensions/**'
-      - 'tools/**'
-      - 'conan.lock'
-      - '.github/**'
+      - recipes/**
+      - profiles/**
+      - consumer/**
+      - extensions/**
+      - tools/**
+      - conan.lock
+      - .github/**
   workflow_dispatch:
     inputs:
       platform:
-        description: 'Build a single platform (blank builds all)'
+        description: Build a single platform (blank builds all)
         required: false
         type: string
 
@@ -36,42 +33,47 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CONAN_VERSION: '2.31.*'
+  CONAN_VERSION: 2.31.*
 
 jobs:
   matrix:
+    name: Matrix
     runs-on: ubuntu-24.04
     outputs:
       platforms: ${{ steps.select.outputs.platforms }}
     steps:
-      - uses: actions/checkout@v4
-      - id: select
-        name: Choose platforms to build
-        run: python3 .github/scripts/build_matrix.py >> "$GITHUB_OUTPUT"
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Platforms
+        id: select
         env:
           ONLY_PLATFORM: ${{ inputs.platform }}
+        run: python3 .github/scripts/build_matrix.py >> "$GITHUB_OUTPUT"
 
   build:
+    name: ${{ matrix.platform }}
     needs: matrix
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
         include: ${{ fromJson(needs.matrix.outputs.platforms) }}
-    name: ${{ matrix.platform }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: Install Conan
         run: pip install "conan==${{ env.CONAN_VERSION }}"
 
       # Qt needs X11 headers and the ARM64 target needs a sysroot. Everything else,
       # including the Android NDK and the Emscripten toolchain, comes from Conan.
-      - name: Install host prerequisites
+      - name: Install Prerequisites
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
@@ -83,16 +85,15 @@ jobs:
             sudo apt-get install -y --no-install-recommends crossbuild-essential-arm64
           fi
 
-      - name: Install host prerequisites
+      - name: Install Prerequisites
         if: runner.os == 'macOS'
         run: brew install ninja
 
-      - name: Install host prerequisites
+      - name: Install Prerequisites
         if: runner.os == 'Windows'
         run: choco install ninja -y
 
-      # Qt and OpenImageIO are large; the default runner disk is not always enough.
-      - name: Free disk space
+      - name: Free Disk Space
         if: runner.os == 'Linux'
         run: |
           sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc
@@ -103,7 +104,7 @@ jobs:
       # part in a package id, so a cached binary built under the old profile still looks
       # current to --build=missing and would be reused with the change silently missing.
       # A recipe or lockfile change is safe to restore from, since those do move ids.
-      - name: Restore Conan cache
+      - name: Cache
         uses: actions/cache@v4
         with:
           path: ~/.conan2
@@ -111,28 +112,29 @@ jobs:
           restore-keys: |
             conan-${{ matrix.platform }}-${{ hashFiles('profiles/**') }}-
 
-      - name: Build packages
+      - name: Build Packages
         run: python3 tools/3rdparty.py package ${{ matrix.platform }}
 
       # Exporting a local recipe moves its lockfile entry to the revision just exported.
       # In CI that should never change anything: if it does, the lockfile in the branch
       # was written before the recipe was last edited, and the build that just ran used
       # a different recipe than the lockfile claims.
-      - name: Check the lockfile matches the recipes
+      - name: Check Lockfile
         run: git diff --exit-code conan.lock
 
-      - name: Validate against the engine contract
+      - name: Validate Packages
         run: python3 tools/validate_package.py packages/${{ matrix.platform }}
 
       # A published package is immutable. Rebuilding one with different contents means
       # somebody changed a recipe without bumping its rev in the catalog.
-      - name: Check for conflicts with published packages
+      - name: Check Published Packages
         if: vars.PROD_CDN != ''
-        run: python3 .github/scripts/check_published.py packages/${{ matrix.platform }}
         env:
           PROD_CDN: ${{ vars.PROD_CDN }}
+        run: python3 .github/scripts/check_published.py packages/${{ matrix.platform }}
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
         with:
           name: packages-${{ matrix.platform }}
           path: packages/${{ matrix.platform }}
