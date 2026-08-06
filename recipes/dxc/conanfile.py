@@ -14,42 +14,10 @@ from conan.tools.scm import Git
 
 
 class DxcConan(ConanFile):
-    """The DirectX Shader Compiler, from O3DE's fork.
-
-    Only the tools ship: dxc, dxsc and the dxcompiler shared library, which the shader
-    builder runs. No headers or import libraries are packaged because nothing in the
-    engine links against it.
-
-    This is an LLVM tree, so expect a long build. The source is cloned rather than
-    downloaded as an archive because the build stamps in the revision.
-
-    The version is pinned to the fork, not to upstream DXC, and that is still necessary.
-    Checked against upstream v1.9.2607: of the fork's eight commits, four are cherry
-    picks that have since landed upstream, but three remain O3DE-only.
-
-      - dxsc, which rewrites DXIL to turn marked loads into specialization constants and
-        emits the bit offsets so the engine can patch bytecode at runtime. Upstream has
-        no equivalent. It cannot simply move into O3DE's own repository either: it
-        depends on a callback the fork adds to LLVM's BitstreamWriter to observe where
-        each constant is emitted, plus DXC-internal libraries no released SDK exposes.
-      - Decorating a precise Position built-in as Invariant in SPIR-V output.
-      - -fvk-disable-depth-hint, a workaround for mobile drivers that crash on images
-        declared with unknown depth.
-
-    Two of those are small enough to upstream. The depth hint may not even be needed any
-    more: upstream maintainers note DXC now always emits a known depth, so the original
-    driver crash is worth retesting before carrying the flag forward.
-
-    Until dxsc has a home, a bump means rebasing the fork onto a newer upstream. Doing so
-    would also let the four redundant cherry picks go, shrinking the delta from eight
-    commits to four. Once the fork moves, only the two constants below and the C++
-    standard handling in generate() need changing here.
-    """
-
     name = "dxc"
     version = "1.8.2505.1-o3de"
-    description = "DirectX Shader Compiler (O3DE fork)"
-    homepage = "https://github.com/o3de/DirectXShaderCompiler"
+    rev = 1
+    platforms = "desktop"
     license = "NCSA"
     package_type = "application"
 
@@ -129,6 +97,7 @@ class DxcConan(ConanFile):
              os.path.join(self.package_folder, "licenses"))
 
     def package_info(self):
+        self.cpp_info.set_property("cmake_file_name", "DirectXShaderCompilerDxc")
         self.cpp_info.includedirs = []
         self.cpp_info.libdirs = []
         self.cpp_info.bindirs = ["bin"]

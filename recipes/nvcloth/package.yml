@@ -1,4 +1,0 @@
-version: 1.1.6
-rev: 1
-targets: [NvCloth]
-platforms: desktop

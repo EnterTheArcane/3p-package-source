@@ -13,20 +13,10 @@ from conan.tools.files import copy, get, replace_in_file
 
 
 class AstcEncoderConan(ConanFile):
-    """ARM's ASTC texture compressor.
-
-    Not to be confused with Conan Center's astc-codec, which is Google's ASTC *decoder*
-    and provides no astcenc.h. The asset pipeline compresses textures, so it needs this
-    one, and there is no Conan Center recipe for it.
-
-    The SIMD variant is selected at build time and ends up in the library name, so the
-    right one is chosen per architecture here.
-    """
-
     name = "astc-encoder"
     version = "3.2"
-    description = "ASTC texture compressor from ARM"
-    homepage = "https://github.com/ARM-software/astc-encoder"
+    rev = 1
+    platforms = "desktop"
     license = "Apache-2.0"
     package_type = "static-library"
 
@@ -75,6 +65,7 @@ class AstcEncoderConan(ConanFile):
                  os.path.join(self.package_folder, "bin"), keep_path=False)
 
     def package_info(self):
+        self.cpp_info.set_property("cmake_file_name", "astc-encoder")
         self.cpp_info.libdirs = ["bin"]
         self.cpp_info.bindirs = ["bin"]
         self.cpp_info.libs = [f"astcenc-{self._suffix}-static"]

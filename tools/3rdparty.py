@@ -87,14 +87,6 @@ def install_args(target, only=None, deploy_to=None, rebuild=False):
         if not spec:
             raise SystemExit(f"'{only}' is not in the catalog")
         args.append(f"{only}/{spec['version']}")
-        # Building one package skips the consumer, and with it the options the consumer
-        # would have applied. Every catalog entry's options go on, not just the selected
-        # one: the dependencies come along in the graph and get deployed too, so options
-        # scoped to the selection alone would rebuild and republish those dependencies
-        # with their recipe defaults, quietly undoing a previous full build.
-        for name, entry in catalog.packages_for(target).items():
-            for option, value in (entry.get("options") or {}).items():
-                args += ["-o", f"{name}/*:{option}={value}"]
     args += profile_args(target)
     # A profile's [conf] does not take part in a package id, so editing one leaves the
     # existing binary looking current and --build=missing reuses it. --rebuild is how to
@@ -126,15 +118,13 @@ def cmd_packages(args):
     if args.platform:
         packages = catalog.packages_for(args.platform)
 
-    print(f"{'package':<22} {'version':<18} rev  origin  targets")
+    # No target column: a package's targets come from its package_info() and are only
+    # known once Conan has resolved it, which listing the inventory does not do.
+    print(f"{'package':<22} {'version':<20} rev  platforms")
     for name, spec in sorted(packages.items()):
-        origin = "local" if spec["local"] else "center"
-        targets = " ".join(spec["targets"])
-        print(f"{name:<22} {spec['version']:<18} {spec['rev']:<4} {origin:<7} {targets}")
+        print(f"{name:<22} {spec['version']:<20} {spec['rev']:<4} {len(spec['platforms'])}")
 
-    local = sum(1 for s in packages.values() if s["local"])
-    print(f"\n{len(packages)} packages: {local} built from our own recipes, "
-          f"{len(packages) - local} from Conan Center")
+    print(f"\n{len(packages)} packages")
 
 
 def cmd_export(_args):

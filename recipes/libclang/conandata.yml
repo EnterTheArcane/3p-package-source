@@ -1,0 +1,22 @@
+# Prebuilt libclang published by the Qt project, which is what PySide's build system
+# expects. Only md5 is published alongside these archives, so that is what is verified.
+sources:
+  20.1.3:
+    Macos:
+      any:
+        url: "https://download.qt.io/development_releases/prebuilt/libclang/libclang-release_20.1.3-based-macos-universal.7z"
+        md5: "88f3d63e085602b5cbdac76cd666f441"
+    Linux:
+      x86_64:
+        url: "https://download.qt.io/development_releases/prebuilt/libclang/libclang-release_20.1.3-based-linux-Rhel8.8-gcc10.3-x86_64.7z"
+        md5: "27de930551f9b34d36ffe69d949f406a"
+      armv8:
+        url: "https://download.qt.io/development_releases/prebuilt/libclang/libclang-release_20.1.3-based-linux-Debian-11.6-gcc10.2-arm64.7z"
+        md5: "928868b843286233dc2778853b3d83aa"
+    Windows:
+      x86_64:
+        url: "https://download.qt.io/development_releases/prebuilt/libclang/libclang-release_20.1.3-based-windows-vs2019_64.7z"
+        md5: "9870e7abb3f2e163ae28becd055f2f91"
+      armv8:
+        url: "https://download.qt.io/development_releases/prebuilt/libclang/libclang-release_20.1.3-based-windows-vs2022_arm64.7z"
+        md5: "4ec705054ed8ba29dbba4896627bd882"

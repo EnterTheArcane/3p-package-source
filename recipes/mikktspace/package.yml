@@ -1,4 +1,0 @@
-version: cci.20200325
-rev: 1
-targets: [mikkelsen]
-platforms: core

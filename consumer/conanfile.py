@@ -35,13 +35,6 @@ class ThirdParty(ConanFile):
     version = "1.0"
     settings = "os", "arch", "compiler", "build_type"
 
-    def configure(self):
-        # Options are applied here rather than in requirements(): Conan resolves options
-        # before the graph is built, and a recipe's own defaults would otherwise win.
-        for name, spec in catalog.packages_for(catalog.platform_id(self.settings)).items():
-            for option, value in (spec.get("options") or {}).items():
-                setattr(self.options[name], option, value)
-
     def requirements(self):
         for name, spec in catalog.packages_for(catalog.platform_id(self.settings)).items():
             # The catalog decides versions. Dependencies often pin an older revision of

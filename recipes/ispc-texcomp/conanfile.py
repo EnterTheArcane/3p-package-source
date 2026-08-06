@@ -14,22 +14,10 @@ from conan.tools.files import copy, get, patch
 
 
 class IspcTexCompConan(ConanFile):
-    """Intel's ISPC texture compressor, as the asset pipeline uses it.
-
-    The kernels are written in ISPC, so building needs Intel's ISPC compiler. That
-    compiler is downloaded as a prebuilt binary rather than built: it is a large LLVM
-    based toolchain and upstream ships releases for every host we build on. Apple
-    Silicon needs a far newer ISPC than the other hosts, which is why the pinned
-    versions differ per platform.
-
-    Upstream has no install step, so the shared library and its single public header
-    are collected by hand.
-    """
-
     name = "ispc-texcomp"
     version = "36b80aa"
-    description = "ISPC Texture Compressor"
-    homepage = "https://github.com/GameTechDev/ISPCTextureCompressor"
+    rev = 1
+    platforms = "desktop"
     license = "MIT"
     package_type = "shared-library"
 
@@ -125,6 +113,7 @@ class IspcTexCompConan(ConanFile):
              os.path.join(self.package_folder, "licenses"))
 
     def package_info(self):
+        self.cpp_info.set_property("cmake_file_name", "ISPCTexComp")
         self.cpp_info.bindirs = ["bin"]
         self.cpp_info.libdirs = ["bin"]
         self.cpp_info.libs = ["ispc_texcomp"]

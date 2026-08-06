@@ -1,8 +1,0 @@
-version: 3.4.13
-rev: 1
-targets: [OpenEXR, Imath]
-platforms: desktop
-# OpenEXR's recipe offers no way to opt out of these, so they travel inside the package
-# rather than leaving the engine to link symbols that never arrive. The previous package
-# did the same with openjph and Imath.
-bundle: [imath, libdeflate, libjpeg, openjph, xz_utils]

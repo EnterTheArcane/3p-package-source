@@ -413,12 +413,94 @@ def _copy_curated_cmake(name, stage):
     return set(os.listdir(source))
 
 
+def _source_url(conanfile):
+    """Where this package's source came from, for the descriptor's URL.
+
+    A recipe states this once, in conandata.yml, and it says something more useful than a
+    project's home page: it is the exact archive the package was built from. The shape
+    varies -- some recipes key sources by version, others by version then os and arch --
+    so the first url found wins.
+    """
+    def search(value):
+        if isinstance(value, dict):
+            url = value.get("url")
+            if isinstance(url, str):
+                return url
+            # Several recipes list mirrors; the first is the one to record.
+            if isinstance(url, (list, tuple)) and url and isinstance(url[0], str):
+                return url[0]
+            for nested in value.values():
+                found = search(nested)
+                if found:
+                    return found
+        elif isinstance(value, (list, tuple)):
+            for nested in value:
+                found = search(nested)
+                if found:
+                    return found
+        return None
+
+    data = getattr(conanfile, "conan_data", None) or {}
+    found = search(data.get("sources"))
+    if found:
+        return found
+
+    # A recipe that clones instead of downloading an archive has no sources entry; the
+    # repository it clones is the same fact.
+    git_url = getattr(conanfile, "_git_url", None)
+    return git_url if isinstance(git_url, str) else ""
+
+
+def _declared(node, spec, key, default=None):
+    """What the recipe says about its own packaging, wherever it still says it.
+
+    A recipe declares these as class attributes, which arrive on the conanfile instance.
+    The catalog entry is consulted only for the recipes not yet converted.
+    """
+    value = getattr(node.conanfile, key, None)
+    if value is not None:
+        return value
+    return spec.get(key, default)
+
+
+def _engine_targets(node, spec, bundles):
+    """The names the engine will pass to find_package for this package.
+
+    That is exactly what cmake_file_name means, so a recipe declares its engine target by
+    setting it and nothing is repeated anywhere else.
+
+    A package that carries another and answers to its name too says so with
+    bundle_targets, naming which of its bundled packages stay visible. Only OpenEXR does:
+    it ships Imath, and the engine has always registered both names. The rest of a
+    package's bundles are implementation detail and deliberately do not appear.
+    """
+    targets = []
+    primary = node.conanfile.cpp_info.get_property("cmake_file_name")
+    if primary:
+        targets.append(primary)
+
+    public = _declared(node, spec, "bundle_targets") or []
+    for bundled in bundles:
+        if str(bundled.ref.name) not in public:
+            continue
+        extra = bundled.conanfile.cpp_info.get_property("cmake_file_name")
+        if extra and extra not in targets:
+            targets.append(extra)
+
+    if not targets:
+        raise RuntimeError(
+            f"{node.ref.name} does not set cmake_file_name in package_info, so there is "
+            f"no name for the engine to call find_package with"
+        )
+    return targets
+
+
 def _build_package(node, spec, platform, staging_root, output_folder, bundles, os_name):
     conanfile = node.conanfile
     name = str(node.ref.name)
     version = str(node.ref.version)
-    package_name = f"{name}-{version}-rev{spec['rev']}-{platform}"
-    payload = spec.get("payload") or name
+    package_name = f"{name}-{version}-rev{_declared(node, spec, 'rev', 1)}-{platform}"
+    payload = _declared(node, spec, "payload") or name
 
     stage = os.path.join(staging_root, package_name)
     if os.path.isdir(stage):
@@ -432,7 +514,7 @@ def _build_package(node, spec, platform, staging_root, output_folder, bundles, o
 
     curated = _copy_curated_cmake(name, stage)
 
-    targets = spec["targets"]
+    targets = _engine_targets(node, spec, bundles)
     config_name = f"{name}-config.cmake"
     if config_name not in curated:
         usage_map = usage_per_target(targets, [node] + bundles, payload, os_name)
@@ -441,7 +523,7 @@ def _build_package(node, spec, platform, staging_root, output_folder, bundles, o
         # from somewhere else. poly2tri installs poly2tri/poly2tri.h and engine code asks
         # for <poly2tri.h>, so the directory holding the header goes on the search path
         # as well. Paths are relative to the payload, as they appear in the package.
-        for extra in spec.get("includedirs") or []:
+        for extra in _declared(node, spec, "includedirs") or []:
             for usage in usage_map.values():
                 usage["includedirs"] = _unique(
                     usage["includedirs"] + [_payload_relative(extra, payload)]
@@ -450,11 +532,12 @@ def _build_package(node, spec, platform, staging_root, output_folder, bundles, o
         # Definitions the engine expects a package to carry that its recipe knows nothing
         # about: HAVE_BENCHMARK is O3DE's own switch for the benchmark code in its tests,
         # and the package is what has always turned it on.
-        extra_defines = spec.get("defines") or []
+        extra_defines = _declared(node, spec, "defines") or []
         if extra_defines:
             for usage in usage_map.values():
                 usage["defines"] = _unique(usage["defines"] + list(extra_defines))
-        config = _generate_config(name, version, targets, usage_map, spec.get("aliases"))
+        config = _generate_config(name, version, targets, usage_map,
+                                  _declared(node, spec, "aliases"))
         with open(os.path.join(stage, config_name), "w", encoding="utf8") as handle:
             handle.write(config)
 
@@ -475,7 +558,7 @@ def _build_package(node, spec, platform, staging_root, output_folder, bundles, o
 
     descriptor = {
         "PackageName": package_name,
-        "URL": conanfile.homepage or conanfile.url or "",
+        "URL": conanfile.homepage or conanfile.url or _source_url(conanfile),
         "License": str(license_name or "custom"),
         "LicenseFile": license_file,
     }
@@ -571,7 +654,7 @@ def deploy(graph, output_folder, **kwargs):
             continue
         # A bundle that quietly resolves to nothing produces a package that looks right
         # and cannot be linked against, days later and somewhere else, so it stops here.
-        wanted = spec.get("bundle", [])
+        wanted = _declared(node, spec, "bundle") or []
         missing = [b for b in wanted if b not in nodes]
         if missing:
             raise RuntimeError(

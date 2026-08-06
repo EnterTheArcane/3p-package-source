@@ -12,20 +12,12 @@ from conan.tools.files import copy
 
 
 class RapidXmlConan(ConanFile):
-    """RapidXML with the header names the engine includes.
-
-    Upstream ships rapidxml.hpp and friends, and Conan Center packages them under those
-    names. Engine code includes <rapidxml/rapidxml.h>, so the headers arrive here with a
-    .h extension instead. They are vendored rather than renamed at build time because
-    these are the exact headers the engine has been built against, and RapidXML has had
-    no upstream release since 2009.
-
-    Header only.
-    """
-
     name = "rapidxml"
     version = "1.13"
-    description = "Fast XML parser"
+    rev = 1
+    platforms = "all"
+    # Kept, like glad's: these headers are vendored rather than downloaded, so there is
+    # no source archive for the descriptor's URL to point at.
     homepage = "https://rapidxml.sourceforge.net"
     license = "BSL-1.0 OR MIT"
     package_type = "header-library"
@@ -40,6 +32,7 @@ class RapidXmlConan(ConanFile):
              os.path.join(self.package_folder, "licenses"))
 
     def package_info(self):
+        self.cpp_info.set_property("cmake_file_name", "RapidXML")
         self.cpp_info.bindirs = []
         self.cpp_info.libdirs = []
 

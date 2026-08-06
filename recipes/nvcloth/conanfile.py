@@ -14,23 +14,10 @@ from conan.tools.files import apply_conandata_patches, copy, export_conandata_pa
 
 
 class NvClothConan(ConanFile):
-    """NvCloth as the engine consumes it.
-
-    Conan Center packages NvCloth's 1.1.6 release branch. The engine cannot use it: the
-    branches disagree about where the callback interfaces live, and engine code derives
-    from nv::cloth::PxAssertHandler, which only exists on master. This builds the same
-    master commit the previous package did.
-
-    NvCloth also keeps the PhysX habit of building one library per configuration rather
-    than one library that respects CMAKE_BUILD_TYPE, and the engine's profile build asks
-    for libNvClothPROFILE. All of them ship together, so build_type does not take part
-    in the package id.
-    """
-
     name = "nvcloth"
     version = "1.1.6"
-    description = "Cloth simulation library"
-    homepage = "https://github.com/NVIDIAGameWorks/NvCloth"
+    rev = 1
+    platforms = "desktop"
     license = "DocumentRef-license.txt:LicenseRef-NvCloth"
     package_type = "static-library"
 
@@ -154,6 +141,7 @@ class NvClothConan(ConanFile):
     def package_info(self):
         # The curated config file describes the include directories, the definitions that
         # have to be defined-but-empty, and the per configuration library names.
+        self.cpp_info.set_property("cmake_file_name", "NvCloth")
         self.cpp_info.includedirs = [
             os.path.join("NvCloth", "include"),
             os.path.join("NvCloth", "extensions", "include"),

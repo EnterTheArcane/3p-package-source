@@ -15,7 +15,9 @@ below). The other ten platforms have profiles, a lockfile and a resolving depend
 graph, and ios-arm builds and validates, but only mac-arm has been through an engine
 build. The deleted tree remains in git history if a platform needs it as reference.
 
-Most packages take their recipe from Conan Center. These are ours, each for a reason:
+Every package is built from a recipe in this repository. Most were adapted from Conan
+Center's, keeping upstream's build and replacing only the metadata the engine needs.
+These are ours for a reason beyond that:
 
 | Package | Why it needs a recipe |
 | --- | --- |
@@ -32,7 +34,7 @@ Most packages take their recipe from Conan Center. These are ours, each for a re
 | `qt` | Conan Center has no 6.10.2 and packages Qt differently from what the engine's FindQt expects. |
 | `python` | A relocatable framework build, not a normal Python. |
 | `pyside` | Conan Center has no PySide recipe at all. |
-| `llvm` | A build tool, never shipped: LLVM's own release binaries, replacing `brew install llvm@20`. PySide needs its libclang, and 20.x specifically -- see `recipes/llvm/conandata.yml`. |
+| `libclang` | A build tool, never shipped: the libclang build the Qt project uses, replacing `brew install llvm@20`. Plain LLVM release binaries do not work; see the gotcha below. |
 
 ## Gotchas worth remembering
 
@@ -73,16 +75,35 @@ Things that cost real time to find, recorded so they do not have to be found twi
   on for every catalog entry, not just the selected one: scoped to the selection alone,
   building one package republishes its dependencies with their recipe defaults and
   quietly undoes an earlier full build.
+- **Shiboken needs the libclang Qt publishes, not LLVM's own release binaries.** With
+  LLVM's, it resolves `QDirListing::IteratorFlag` onto `QDirIterator`'s enum and emits
+  wrappers referencing a `Default` member that does not exist. What was actually
+  measured: Qt's 20.1.3 works, LLVM's 20.1.8 and 22.1.8 both fail that way. That leaves
+  Qt's patches and an upstream change after 20.1.3 as competing explanations -- building
+  against LLVM's own 20.1.3 would separate them, and has not been done.
+- **A buildenv only reaches `self.run` when env scripts are generated.** Packaging turns
+  that off, so a `tool_requires` that exports variables silently contributes nothing and
+  the build picks up whatever the machine has. PySide passes libclang's path explicitly
+  for exactly this reason.
 - **A framework Python does not look like a unix Python.** PySide's `setup.py` needs
   `libpython` and the headers linked into the virtual environment, and shiboken's
   libclang needs `SDKROOT` or it cannot find `<type_traits>`.
 
 ## Where package metadata lives
 
-`recipes/<name>/package.yml`, beside the recipe rather than inside it. Conan hashes a
-recipe's exported files, so a rev bump written into the conanfile would rebuild the
-package to change a number that only affects publishing. Nothing in `package.yml` is
-exported, which was verified rather than assumed.
+In the recipe. `version`, `rev` and `platforms` are class attributes, read out of the
+source without running it, because the consumer has to know which packages a platform
+wants before Conan has a graph to ask. Conan's own `conan inspect` reports only the
+attributes it knows about, so it cannot carry these.
+
+Everything else comes from the resolved conanfile at deploy time: the engine's target
+name from `cmake_file_name`, and `payload`, `bundle`, `bundle_targets`, `includedirs`
+and `defines` as class attributes. A recipe without `platforms` is a build tool that is
+never shipped, which is what `libclang` is.
+
+Bumping `rev` changes the recipe revision and so rebuilds the package. That costs
+nothing in practice: `rev` is bumped when the contents changed, which already required
+a rebuild.
 
 ## What was deleted
 
@@ -117,7 +138,7 @@ sites updated across 31 files. See the deviations below.
 - **Versions** track the latest on Conan Center, except where the engine depends on a
   particular API: Lua stays on 5.4, pybind11 on 2.x, and OpenSSL on 3.6.3 rather than
   4.x. OpenSSL moving from 1.1.1 to 3.x is the largest engine-visible change.
-- **benchmark stays on 1.8.5**, the newest release the engine's own source compiles
+- **benchmark stays on 1.7.1**, the newest release the engine's own source compiles
   against. 1.9 deprecates the const-ref `DoNotOptimize` overload and the global
   `Benchmark` type, and the engine builds its tests with `-Werror`: 31 files and roughly
   635 call sites would have to be updated first. That is an engine change, and until it

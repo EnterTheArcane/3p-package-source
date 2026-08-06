@@ -20,25 +20,11 @@ from conan.tools.files import (
 
 
 class PhysXConan(ConanFile):
-    """NVIDIA PhysX 5, built in all four of the configurations the engine selects between.
-
-    PhysX is unusual here: the engine picks between release, profile, checked and debug
-    libraries at consume time, so all four are built and packaged side by side under
-    bin/static/<config>. That is why build_type is removed from the package id; one
-    package answers for every configuration.
-
-    PhysX 4 is not built. It is deprecated and the engine's PhysX5 gem is what consumes
-    this package.
-
-    Upstream drives its build through generate_projects plus preset xml files rather
-    than plain CMake, and fetches its own dependencies with packman, so this shells out
-    to those scripts instead of using the CMake helpers.
-    """
-
     name = "physx"
     version = "5.1.1"
-    description = "NVIDIA PhysX SDK"
-    homepage = "https://github.com/NVIDIA-Omniverse/PhysX"
+    rev = 1
+    platforms = "desktop"
+    payload = 'PhysX'
     license = "BSD-3-Clause"
     package_type = "static-library"
 
@@ -155,5 +141,6 @@ class PhysXConan(ConanFile):
 
     def package_info(self):
         # The curated config file describes the targets and their configuration mapping.
+        self.cpp_info.set_property("cmake_file_name", "PhysX5")
         self.cpp_info.includedirs = ["physx/include"]
         self.cpp_info.libdirs = ["physx/bin/static/release"]

@@ -13,21 +13,10 @@ from conan.tools.files import apply_conandata_patches, copy, export_conandata_pa
 
 
 class LuaConan(ConanFile):
-    """Lua as the engine consumes it: patched, and with headers under a Lua/ directory.
-
-    This is not stock Lua. Engine code includes <Lua/lualib.h>, so the headers are
-    nested, and the sources are patched to compile out os.execute, io.popen and dynamic
-    library loading on iOS and Android. Apple rejects binaries that reference system()
-    at all, so on iOS this is the difference between building and not building.
-
-    Upstream ships no build system, so the library is built from the amalgamated
-    onelua.c with the CMakeLists next to this recipe.
-    """
-
     name = "lua"
     version = "5.4.4"
-    description = "Powerful, efficient, lightweight, embeddable scripting language"
-    homepage = "https://www.lua.org"
+    rev = 1
+    platforms = "core"
     license = "MIT"
     package_type = "static-library"
 
@@ -78,6 +67,7 @@ class LuaConan(ConanFile):
              os.path.join(self.package_folder, "licenses"))
 
     def package_info(self):
+        self.cpp_info.set_property("cmake_file_name", "Lua")
         self.cpp_info.libs = ["lualib"]
         if self.settings.os in ("Linux", "Android"):
             self.cpp_info.system_libs = ["m", "dl"]

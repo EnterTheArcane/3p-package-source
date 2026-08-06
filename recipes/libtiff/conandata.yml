@@ -1,0 +1,9 @@
+patches:
+  4.7.2:
+  - patch_description: 'CMake: robust handling of dependencies'
+    patch_file: patches/4.7.2-0001-cmake-dependencies.patch
+    patch_type: conan
+sources:
+  4.7.2:
+    sha256: 4996f0c4f93094719b1ca5c6279b20e588773ba8a247533e486416fb662ddb88
+    url: https://download.osgeo.org/libtiff/tiff-4.7.2.tar.xz

@@ -17,27 +17,11 @@ from conan.tools.files import apply_conandata_patches, copy, export_conandata_pa
 
 
 class QtConan(ConanFile):
-    """Qt, restricted to the modules the engine actually uses.
-
-    Conan Center has a Qt recipe, but it does not have 6.10.2 and it packages Qt
-    differently from what the engine's FindQt expects: a relocatable lib/cmake/Qt6 tree,
-    host tools in both bin and libexec, plugins, and translations. Driving Qt's own
-    configure script the way the previous build did is closer to the result the engine
-    needs than bending the Conan Center recipe into that shape.
-
-    Only qtbase, qtimageformats, qtsvg, qttranslations and qttools are built. zlib and
-    tiff are taken from Qt's bundled copies rather than ours: the engine consumes Qt as
-    a self-contained unit, and mixing the two sets of symbols has caused problems before.
-
-    The curated cmake in cmake/ replaces the generated config wholesale. It is the file
-    that defines ly_qt_moc_target and friends, which the engine calls for every target
-    with AUTOMOC, so it has to exist before the first such target is declared.
-    """
-
     name = "qt"
     version = "6.10.2"
-    description = "Qt, the cross platform application framework"
-    homepage = "https://www.qt.io/"
+    rev = 1
+    platforms = "desktop"
+    payload = 'qt'
     license = "LGPL-3.0"
     package_type = "shared-library"
 
@@ -120,6 +104,7 @@ class QtConan(ConanFile):
 
     def package_info(self):
         # The curated config file describes the targets; nothing is generated from here.
+        self.cpp_info.set_property("cmake_file_name", "Qt")
         self.cpp_info.bindirs = ["bin", "libexec"]
         self.cpp_info.libdirs = ["lib"]
         self.cpp_info.includedirs = ["include"]

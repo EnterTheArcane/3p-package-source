@@ -19,26 +19,11 @@ from conan.tools.files import copy, get, patch
 
 
 class PythonConan(ConanFile):
-    """CPython as the engine embeds it: a relocatable framework build.
-
-    The engine does not want a normal Python. It wants one that can be unpacked
-    anywhere and still work, because it is downloaded to ~/.o3de/Python and a virtual
-    environment is created from it. On macOS that means a framework whose install name
-    is @rpath-relative, which is what relocatable-python rewrites it to be.
-
-    Two patches carry over from the previous build: one teaches relocatable-python to
-    reuse an already built framework and stops it hard-failing on codesigning, the
-    other drops the extra third party packages python.org's installer would otherwise
-    bundle. The engine installs its own requirements into the venv afterwards.
-
-    Tcl/Tk are built from pinned source rather than taken from the machine, and expat
-    is replaced with a known version, so the result does not vary with the build host.
-    """
-
     name = "python"
     version = "3.10.13"
-    description = "The Python programming language, built for embedding in O3DE"
-    homepage = "https://www.python.org"
+    rev = 1
+    platforms = "tools"
+    payload = '.'
     license = "PSF-2.0"
     package_type = "shared-library"
 
@@ -175,6 +160,7 @@ class PythonConan(ConanFile):
                 os.remove(os.path.join(bundled, name))
 
     def package_info(self):
+        self.cpp_info.set_property("cmake_file_name", "Python")
         base = os.path.join(self.package_folder, "Python.framework", "Versions",
                             self._short_version)
         self.cpp_info.includedirs = [os.path.join(base, "Headers")]

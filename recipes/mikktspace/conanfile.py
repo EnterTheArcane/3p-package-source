@@ -13,18 +13,10 @@ from conan.tools.files import get, save
 
 
 class MikkTSpaceConan(ConanFile):
-    """MikkTSpace with its header under mikkelsen/.
-
-    Conan Center installs mikktspace.h at the root of the include directory. Engine code
-    includes <mikkelsen/mikktspace.h>, after the author rather than the library, so the
-    header is nested here to match. Everything else follows Conan Center's recipe: the
-    same upstream commit, and the library built from the one source file.
-    """
-
     name = "mikktspace"
     version = "cci.20200325"
-    description = "A common standard for tangent space used in baking tools to produce normal maps"
-    homepage = "https://github.com/mmikk/MikkTSpace"
+    rev = 1
+    platforms = "core"
     license = "Zlib"
     package_type = "static-library"
 
@@ -73,4 +65,5 @@ class MikkTSpaceConan(ConanFile):
         cmake.install()
 
     def package_info(self):
+        self.cpp_info.set_property("cmake_file_name", "mikkelsen")
         self.cpp_info.libs = ["mikktspace"]

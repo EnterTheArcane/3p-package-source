@@ -1,6 +1,0 @@
-version: 1.6.58
-rev: 1
-targets: [PNG]
-platforms: core
-aliases:
-  PNG: [PNG::PNG]

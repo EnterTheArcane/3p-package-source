@@ -14,18 +14,10 @@ from conan.tools.layout import basic_layout
 
 
 class McppConan(ConanFile):
-    """mcpp with the O3DE fork applied, built as a static library.
-
-    The shader compiler embeds mcpp rather than running it, so this builds the library
-    form. The patch is what makes that possible: it gives the headers C++ linkage,
-    renames macros that collide with engine code, and adds the include-report callback
-    the shader builder uses to track dependencies. Stock mcpp cannot stand in for it.
-    """
-
     name = "mcpp"
     version = "2.7.2_az.2"
-    description = "A portable C/C++ preprocessor"
-    homepage = "https://mcpp.sourceforge.net"
+    rev = 1
+    platforms = "desktop"
     license = "BSD-2-Clause"
     package_type = "static-library"
 
@@ -77,4 +69,5 @@ class McppConan(ConanFile):
                     os.remove(os.path.join(path, name))
 
     def package_info(self):
+        self.cpp_info.set_property("cmake_file_name", "mcpp")
         self.cpp_info.libs = ["mcpp"]

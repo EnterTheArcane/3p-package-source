@@ -1,4 +1,0 @@
-version: 1.16
-rev: 1
-targets: [civetweb]
-platforms: windows

@@ -5,11 +5,6 @@
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 #
 
-# NOT YET VERIFIED. This recipe transposes the previous PySide build and has not been
-# built end to end, so it is deliberately absent from tools/catalog.py: nothing builds
-# it and CI cannot be broken by it. It also depends on the python and qt recipes, which
-# are themselves unverified. Add all three catalog entries together once they build.
-
 import glob
 import os
 import shutil
@@ -20,31 +15,11 @@ from conan.tools.files import apply_conandata_patches, copy, export_conandata_pa
 
 
 class PySideConan(ConanFile):
-    """PySide, the Qt bindings for Python, plus the Shiboken generator.
-
-    Conan Center has no PySide recipe. This drives upstream's setup.py the way the
-    previous build did, with two differences worth knowing about.
-
-    First, libclang comes from a package of LLVM's own release binaries rather than from
-    Homebrew. Shiboken parses C++ with libclang, and the previous build ran
-    `brew install llvm@20` on the build machine, which made the output depend on the
-    machine and left a Homebrew path baked into the shipped shiboken6 binary. The 20.x
-    pin is a real constraint, not caution: see recipes/llvm/conandata.yml for the
-    compile error PySide 6.10.2 produces under llvm 22.
-
-    Second, the shipped binaries get their load paths rewritten here. The previous
-    packaging step called patchelf on macOS, where it does not exist, and the script did
-    not stop on error, so the rewrite silently never happened and shiboken6 shipped with
-    an absolute reference to the build machine's Qt.
-
-    The recipe is named pyside rather than pyside6; the version already says which major
-    release it is.
-    """
-
     name = "pyside"
     version = "6.10.2"
-    description = "Python bindings for Qt, with the Shiboken generator"
-    homepage = "https://code.qt.io/pyside/pyside-setup.git"
+    rev = 1
+    platforms = "tools"
+    payload = 'pyside6'
     license = "LGPL-3.0"
     package_type = "shared-library"
 
@@ -72,7 +47,7 @@ class PySideConan(ConanFile):
         self.requires("qt/6.10.2")
 
     def build_requirements(self):
-        self.tool_requires("llvm/20.1.8")
+        self.tool_requires("libclang/20.1.3")
 
     def layout(self):
         self.folders.source = "src"
@@ -143,7 +118,14 @@ class PySideConan(ConanFile):
             "--limited-api=yes",
             f"--skip-modules={self._skipped_modules}",
         ]
-        environment = ""
+        # Shiboken finds libclang through these. The libclang package declares them in
+        # its buildenv, but a buildenv only reaches this command when Conan has generated
+        # the environment scripts, and the packaging command line turns that off. Passed
+        # explicitly here instead: otherwise shiboken picks up whatever LLVM the build
+        # machine has, which is neither pinned nor the build Qt patches for it.
+        libclang = self.dependencies.build["libclang"].package_folder
+        environment = f'LLVM_INSTALL_DIR="{libclang}" CLANG_INSTALL_DIR="{libclang}" '
+
         if self.settings.os == "Macos":
             arguments += ["--macos-deployment-target=15.0", "--no-unity"]
             # Shiboken parses Qt's headers with libclang, and the libclang Qt publishes
@@ -152,7 +134,7 @@ class PySideConan(ConanFile):
             # header. Apple's own clang finds this by asking xcrun; this tells ours.
             sdk = subprocess.run(["xcrun", "--sdk", "macosx", "--show-sdk-path"],
                                  capture_output=True, text=True, check=True).stdout.strip()
-            environment = f'SDKROOT="{sdk}" '
+            environment += f'SDKROOT="{sdk}" '
 
         self.run(f'{environment}"{venv_python}" setup.py {" ".join(arguments)}',
                  cwd=self.source_folder)
@@ -218,7 +200,7 @@ class PySideConan(ConanFile):
         absolute path into Homebrew, so the shipped tool only ran on a machine that had
         llvm@20 installed. Shipping the library instead makes the package self contained.
         """
-        source = self.dependencies.build["llvm"].package_folder
+        source = self.dependencies.build["libclang"].package_folder
         destination = os.path.join(self.package_folder, "lib")
         os.makedirs(destination, exist_ok=True)
         for name in os.listdir(os.path.join(source, "lib")):
@@ -262,6 +244,7 @@ class PySideConan(ConanFile):
 
     def package_info(self):
         # The curated config file describes the targets; nothing is generated from here.
+        self.cpp_info.set_property("cmake_file_name", "pyside6")
         self.cpp_info.bindirs = ["bin"]
         self.cpp_info.libdirs = ["lib"]
         self.cpp_info.includedirs = ["include"]

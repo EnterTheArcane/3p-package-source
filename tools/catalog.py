@@ -5,26 +5,29 @@
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 #
 
-"""What we build, for which platforms, and how it is named.
+"""What we build and for which platforms.
 
-Each package is a directory under recipes/ holding a package.yml. A directory with a
-conanfile.py beside it is one we build ourselves; one without takes the recipe from
-Conan Center, and the package.yml is all there is to it.
+Every package is a directory under recipes/ holding a conanfile.py we own. The recipe is
+the whole description: its version, its release counter, the platforms it ships for, and
+through package_info the name the engine calls find_package with.
 
-package.yml sits next to the recipe but deliberately outside it. Conan hashes a recipe's
-exported files to decide whether a binary is still good, so writing a rev bump into the
-conanfile would rebuild the package -- an hour, in Qt's case -- to change a number that
-only affects publishing. Nothing here is exported, so editing it costs nothing.
+The consumer has to know which packages a platform wants before Conan has a graph to ask,
+so version, rev and platforms are read straight out of the recipe source. Conan's own
+inspection reports only the attributes it knows about, and importing the recipe would tie
+this to an interpreter that has Conan installed, which the command line does not.
 
 Loaded by path from the consumer conanfile and from the deployer, so it must not import
-anything beyond the standard library and PyYAML, which Conan itself depends on.
+anything beyond the standard library.
 """
 
+import ast
 import os
 
-import yaml
-
 RECIPES = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "recipes")
+
+# Class attributes a recipe declares for itself. Everything else the catalog needs comes
+# from Conan at graph time; these are the facts that have to be known before there is one.
+_FROM_RECIPE = ("version", "rev", "platforms")
 
 DESKTOP = (
     "windows-x64",
@@ -54,7 +57,7 @@ TOOLS = DESKTOP
 
 WINDOWS = ("windows-x64", "windows-arm")
 
-# Names a package.yml may use in place of a list of platform ids.
+# Names a recipe may use in place of a list of platform ids.
 GROUPS = {
     "all": ALL,
     "core": CORE,
@@ -119,60 +122,88 @@ def _resolve_platforms(value, name):
     if isinstance(value, str):
         if value not in GROUPS:
             raise ValueError(
-                f"{name}/package.yml: unknown platform group '{value}'; expected one of "
+                f"{name}: unknown platform group '{value}'; expected one of "
                 f"{', '.join(sorted(GROUPS))}, or a list of platform ids"
             )
         return GROUPS[value]
 
     unknown = [platform for platform in value if platform not in ALL]
     if unknown:
-        raise ValueError(f"{name}/package.yml: unknown platform(s) {', '.join(unknown)}")
+        raise ValueError(f"{name}: unknown platform(s) {', '.join(unknown)}")
     return tuple(value)
 
 
+def _recipe_attributes(path):
+    """Class attributes of a conanfile, read without importing or running it.
+
+    The consumer has to know which packages a platform wants before Conan has a graph to
+    ask, so this reads the declaration straight out of the source. Parsing rather than
+    importing keeps the catalog free of a Conan dependency, and means a recipe cannot run
+    code just by being listed.
+    """
+    with open(path, encoding="utf8") as handle:
+        tree = ast.parse(handle.read(), filename=path)
+
+    definition = next((node for node in tree.body if isinstance(node, ast.ClassDef)), None)
+    if definition is None:
+        return {}
+
+    attributes = {}
+    for statement in definition.body:
+        if not isinstance(statement, ast.Assign) or len(statement.targets) != 1:
+            continue
+        target = statement.targets[0]
+        if not isinstance(target, ast.Name):
+            continue
+        try:
+            attributes[target.id] = ast.literal_eval(statement.value)
+        except ValueError:
+            # Conan's own inspection reports only the attributes it knows about, so these
+            # have to be read from the source, and reading the source means they have to
+            # be literals. Silently skipping one would drop the package from the
+            # inventory, which looks exactly like a package nobody asked for.
+            if target.id in _FROM_RECIPE:
+                raise ValueError(
+                    f"{path}: {target.id} has to be written as a literal, because the "
+                    f"catalog reads it without running the recipe"
+                ) from None
+    return attributes
+
+
 def _load():
-    """Read every recipes/<name>/package.yml.
+    """Read what every recipe declares about itself.
 
-    Required fields:
-      version    Conan version to require.
-      rev        Release counter. Bump to reship a package; the CDN refuses overwrites.
-      targets    Names the engine passes to find_package. Each gets a
-                 Find<target>.cmake shim that includes the package's config file.
-      platforms  A group name from GROUPS, or a list of platform ids.
+      version    The version built, which also names the package.
+      rev        Release counter. Bump to reship; the CDN refuses overwrites.
+      platforms  A group name from GROUPS, or a list of platform ids. A recipe without
+                 this is a build tool that never ships, which is what llvm is.
 
-    Optional:
-      aliases    Upstream target spellings to alias, so a dependency calling
-                 find_package(ZLIB) links ours rather than a system copy.
-      bundle     Dependencies whose payload is merged into this package rather than
-                 shipped separately, as Imath is into OpenEXR.
-      payload    Payload directory name, when it differs from the recipe name.
-      options    Conan options for this package, for trimming what a recipe pulls in
-                 by default. Conan Center recipes tend to enable every optional format
-                 or backend they support, which is rarely what a shipped package wants.
-
-    Anything in recipes/<name>/cmake/ is copied to the package root and replaces the
-    generated config file or Find module of the same name.
+    Everything else the deployer needs -- the engine's target name, bundles, payload
+    directory, extra include directories and defines -- comes from the recipe too, but at
+    graph time, off the resolved conanfile. Anything in recipes/<name>/cmake/ is copied
+    to the package root and replaces the generated config or Find module of that name.
     """
     packages = {}
     if not os.path.isdir(RECIPES):
         return packages
 
     for name in sorted(os.listdir(RECIPES)):
-        descriptor = os.path.join(RECIPES, name, "package.yml")
-        if not os.path.isfile(descriptor):
+        recipe = os.path.join(RECIPES, name, "conanfile.py")
+        if not os.path.isfile(recipe):
+            continue
+        spec = {key: value for key, value in _recipe_attributes(recipe).items()
+                if key in _FROM_RECIPE}
+        # Declaring platforms is what makes a recipe an engine package. A recipe without
+        # them is a build tool that never ships, which is what llvm is.
+        if "platforms" not in spec:
             continue
 
-        with open(descriptor, encoding="utf8") as handle:
-            spec = yaml.safe_load(handle) or {}
-
-        missing = [f for f in ("version", "rev", "targets", "platforms") if f not in spec]
+        missing = [f for f in ("version", "rev") if f not in spec]
         if missing:
-            raise ValueError(f"{name}/package.yml: missing {', '.join(missing)}")
+            raise ValueError(f"{name}: missing {', '.join(missing)}")
 
         spec["version"] = str(spec["version"])
         spec["platforms"] = _resolve_platforms(spec["platforms"], name)
-        # Whether we author the recipe or take it from Conan Center.
-        spec["local"] = os.path.isfile(os.path.join(RECIPES, name, "conanfile.py"))
         packages[name] = spec
 
     return packages

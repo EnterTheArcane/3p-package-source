@@ -11,18 +11,10 @@ import os
 
 
 class XxHashConan(ConanFile):
-    """xxHash as a header only library, with the headers under an xxhash/ directory.
-
-    Conan Center's recipe installs xxhash.h at the root of the include directory, but
-    engine code includes <xxhash/xxhash.h>, so the headers are nested here instead.
-    Everything is used header only via XXH_INLINE_ALL, which is also how the engine has
-    always consumed it, so no library is built.
-    """
-
     name = "xxhash"
     version = "0.8.3"
-    description = "Extremely fast non-cryptographic hash algorithm"
-    homepage = "https://github.com/Cyan4973/xxHash"
+    rev = 1
+    platforms = "desktop"
     license = "BSD-2-Clause"
     package_type = "header-library"
     no_copy_source = True
@@ -41,6 +33,7 @@ class XxHashConan(ConanFile):
              os.path.join(self.package_folder, "licenses"))
 
     def package_info(self):
+        self.cpp_info.set_property("cmake_file_name", "xxhash")
         self.cpp_info.bindirs = []
         self.cpp_info.libdirs = []
         # XXH_INLINE_ALL is deliberately not defined here. Engine code defines it itself,

@@ -1,9 +1,0 @@
-version: cci.20130502
-rev: 1
-targets: [poly2tri]
-platforms: desktop
-
-# Engine code includes <poly2tri.h>, but the headers install under include/poly2tri, so
-# the directory holding them goes on the search path too. The previous package pointed
-# at that directory and nothing else.
-includedirs: [include/poly2tri]

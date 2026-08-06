@@ -13,21 +13,10 @@ from conan.tools.files import apply_conandata_patches, copy, export_conandata_pa
 
 
 class SquishCcrConan(ConanFile):
-    """The squish-ccr fork of libsquish, which is what the texture compressor uses.
-
-    Conan Center's libsquish is the original library. squish-ccr is a fork with a
-    different and larger API, and engine code includes <squish-ccr/squish.h> and calls
-    into that API, so the two are not interchangeable.
-
-    Upstream pins to a commit rather than a release; it has had none, and it ships no
-    build system either, so the CMakeLists beside this recipe is the one that builds it.
-    On ARM the SSE intrinsics it is written against are translated by sse2neon.
-    """
-
     name = "squish-ccr"
     version = "deb557d"
-    description = "squish-ccr, a fork of libsquish with additional block compressors"
-    homepage = "https://github.com/Ethatron/squish-ccr"
+    rev = 1
+    platforms = "desktop"
     license = "MIT"
     package_type = "shared-library"
 
@@ -99,6 +88,7 @@ class SquishCcrConan(ConanFile):
                  os.path.join(self.package_folder, "licenses"))
 
     def package_info(self):
+        self.cpp_info.set_property("cmake_file_name", "squish-ccr")
         self.cpp_info.libdirs = ["bin"]
         self.cpp_info.bindirs = ["bin"]
         self.cpp_info.libs = ["squish-ccr"]
