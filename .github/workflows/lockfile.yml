@@ -5,9 +5,6 @@ on:
     - cron: "0 6 1 * *"
   workflow_dispatch:
 
-env:
-  CONAN_VERSION: 2.31.*
-
 jobs:
   refresh:
     name: Refresh
@@ -22,7 +19,9 @@ jobs:
           python-version: "3.12"
 
       - name: Install Conan
-        run: pip install "conan==${{ env.CONAN_VERSION }}"
+        run: |
+          pip install .
+          conan config install . -sf=extensions -tf=extensions
 
       # One lockfile covers every platform: each graph is added to the same file so a
       # dependency shared by several targets cannot drift between them.

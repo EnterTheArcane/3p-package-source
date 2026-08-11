@@ -13,12 +13,13 @@ needs something Conan Center does not provide.
 ## Getting started
 
 ```bash
-pip install "conan==2.31.*"
+pip install .                                        # conan and ninja, pinned
+conan config install . -sf=extensions -tf=extensions # the 3p: commands
 
-python3 tools/3rdparty.py platforms              # target platforms and their package counts
-python3 tools/3rdparty.py packages mac-arm       # what is built for one of them
-python3 tools/3rdparty.py package mac-arm        # build and package everything for it
-python3 tools/3rdparty.py validate mac-arm       # check the results against the engine contract
+conan 3p:platforms              # target platforms and their package counts
+conan 3p:packages mac-arm       # what is built for one of them
+conan 3p:package mac-arm        # build and package everything for it
+conan 3p:validate mac-arm       # check the results against the engine contract
 ```
 
 `package` writes to `packages/<platform>/`: four files per package, plus a manifest.
@@ -38,8 +39,9 @@ built folder, which is what the promote workflow does when it opens its pull req
 recipes/<name>/      package.yml, and a conanfile.py only when we build it ourselves
 profiles/            one per target platform, plus _common
 consumer/            the aggregate that resolves a whole platform at once
+extensions/commands/3p/                   the conan 3p:* commands
 extensions/deployers/engine_package.py    turns resolved packages into engine packages
-tools/               the command line, the catalog, the validators
+tools/               what the commands do, plus the catalog and the validators
 docs/                the longer explanations
 .github/workflows/   build, promote, lockfile maintenance
 ```

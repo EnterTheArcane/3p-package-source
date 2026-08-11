@@ -48,7 +48,7 @@ recipes; dropping the shim means forking each one.
 Conan falls back to the user's default profile for anything not specified. A default
 profile can carry settings, and even `[replace_requires]` rules that silently swap
 one library for another, which would end up baked into a shipped package.
-`tools/3rdparty.py` therefore always passes `-pr:h` and `-pr:b` explicitly, using
+The commands therefore always pass `-pr:h` and `-pr:b` explicitly, using
 the profile for the machine it is running on as the build profile. Do the same when
 invoking Conan by hand.
 

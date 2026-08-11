@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 #
 # Copyright (c) Contributors to the Open 3D Engine Project.
 # For complete copyright and license terms please see the LICENSE at the root of this distribution.
@@ -6,15 +5,15 @@
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 #
 
-"""Build third party packages for a target platform.
+"""What the conan 3p:* commands do.
 
-Wraps the Conan commands so the long invocations stay in one place. Both the host
-and build profiles are always passed explicitly: without them Conan falls back to
-the user's default profile, which may carry settings or requirement overrides that
-have no business in a shipped package.
+The commands themselves live in extensions/commands/3p and only parse arguments; this
+holds the work, so it can be read in one place and loaded from the checkout being acted
+on. Both the host and build profiles are always passed explicitly: without them Conan
+falls back to the user's default profile, which may carry settings or requirement
+overrides that have no business in a shipped package.
 """
 
-import argparse
 import importlib.util
 import json
 import os
@@ -73,7 +72,7 @@ def local_recipes():
 
 def profile_args(target):
     if target not in catalog.ALL:
-        raise SystemExit(f"unknown platform '{target}'; see '3rdparty.py platforms'")
+        raise SystemExit(f"unknown platform '{target}'; see 'conan 3p:platforms'")
     return [
         "-pr:h", os.path.join(PROFILES, target),
         "-pr:b", os.path.join(PROFILES, native_platform()),
@@ -224,48 +223,3 @@ def cmd_lock(args):
 def cmd_validate(args):
     out = args.output or os.path.join(ROOT, "packages", args.platform)
     run([sys.executable, os.path.join(ROOT, "tools", "validate_package.py"), out])
-
-
-def main():
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    sub = parser.add_subparsers(dest="command", required=True)
-
-    sub.add_parser("platforms", help="list target platforms").set_defaults(func=cmd_platforms)
-    sub.add_parser("export", help="export local recipes to the Conan cache").set_defaults(func=cmd_export)
-
-    packages = sub.add_parser("packages", help="list the package inventory")
-    packages.add_argument("platform", nargs="?", help="only packages built for this platform")
-    packages.set_defaults(func=cmd_packages)
-
-    build = sub.add_parser("build", help="build a platform into the Conan cache")
-    build.add_argument("platform")
-    build.add_argument("--only", help="build a single catalog entry")
-    build.add_argument("--rebuild", action="store_true",
-                       help="build from source even if a binary is cached")
-    build.set_defaults(func=cmd_build)
-
-    package = sub.add_parser("package", help="build and write engine packages")
-    package.add_argument("platform")
-    package.add_argument("--only", help="package a single catalog entry")
-    package.add_argument("--rebuild", action="store_true",
-                         help="build from source even if a binary is cached")
-    package.add_argument("-o", "--output", help="output folder (default packages/<platform>)")
-    package.set_defaults(func=cmd_package)
-
-    lock = sub.add_parser("lock", help="rebuild conan.lock across every platform")
-    lock.set_defaults(func=cmd_lock)
-
-    validate = sub.add_parser("validate", help="check packages against the engine contract")
-    validate.add_argument("platform")
-    validate.add_argument("-o", "--output", help="folder to validate (default packages/<platform>)")
-    validate.set_defaults(func=cmd_validate)
-
-    args = parser.parse_args()
-    try:
-        args.func(args)
-    except subprocess.CalledProcessError as exc:
-        raise SystemExit(exc.returncode)
-
-
-if __name__ == "__main__":
-    main()

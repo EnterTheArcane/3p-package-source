@@ -32,9 +32,6 @@ concurrency:
   group: build-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  CONAN_VERSION: 2.31.*
-
 jobs:
   matrix:
     name: Matrix
@@ -68,8 +65,12 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install Conan
-        run: pip install "conan==${{ env.CONAN_VERSION }}"
+      # pyproject.toml pins conan and ninja; the commands themselves are Conan
+      # extensions, which have to be installed into the Conan home to be found.
+      - name: Install the toolchain
+        run: |
+          pip install .
+          conan config install . -sf=extensions -tf=extensions
 
       # Qt needs X11 headers and the ARM64 target needs a sysroot. Everything else,
       # including the Android NDK and the Emscripten toolchain, comes from Conan.
@@ -78,20 +79,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            clang-18 lld-18 ninja-build \
+            clang-18 lld-18 \
             libgl1-mesa-dev libxkbcommon-dev libxkbcommon-x11-dev libx11-dev \
             libxext-dev libxrender-dev libxrandr-dev libxinerama-dev libxi-dev libxkbfile-dev
           if [ "${{ matrix.platform }}" = "linux-arm" ]; then
             sudo apt-get install -y --no-install-recommends crossbuild-essential-arm64
           fi
-
-      - name: Install Prerequisites
-        if: runner.os == 'macOS'
-        run: brew install ninja
-
-      - name: Install Prerequisites
-        if: runner.os == 'Windows'
-        run: choco install ninja -y
 
       - name: Free Disk Space
         if: runner.os == 'Linux'
@@ -113,7 +106,7 @@ jobs:
             conan-${{ matrix.platform }}-${{ hashFiles('profiles/**') }}-
 
       - name: Build Packages
-        run: python3 tools/3rdparty.py package ${{ matrix.platform }}
+        run: conan 3p:package ${{ matrix.platform }}
 
       # Exporting a local recipe moves its lockfile entry to the revision just exported.
       # In CI that should never change anything: if it does, the lockfile in the branch
@@ -123,7 +116,7 @@ jobs:
         run: git diff --exit-code conan.lock
 
       - name: Validate Packages
-        run: python3 tools/validate_package.py packages/${{ matrix.platform }}
+        run: conan 3p:validate ${{ matrix.platform }}
 
       # A published package is immutable. Rebuilding one with different contents means
       # somebody changed a recipe without bumping its rev in the catalog.

@@ -51,8 +51,8 @@ Inherited unchanged from the previous pipeline.
 ## Checking packages before they ship
 
 ```bash
-tools/3rdparty.py package mac-arm          # build and write packages/mac-arm
-tools/3rdparty.py validate mac-arm         # shape, hashes, manifest, find_package
+conan 3p:package mac-arm          # build and write packages/mac-arm
+conan 3p:validate mac-arm         # shape, hashes, manifest, find_package
 tools/engine_check.py packages/mac-arm --engine ../Engine
 ```
 

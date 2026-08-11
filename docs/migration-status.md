@@ -7,7 +7,7 @@ what is and is not yet proven.
 
 Everything under `recipes/` builds, passes `validate_package.py`, and is resolved by the
 engine's own package system through `engine_check.py`, with package hash and full content
-validation forced on. Run `tools/3rdparty.py packages` for the current inventory.
+validation forced on. Run `conan 3p:packages` for the current inventory.
 
 O3DE `development` builds against the mac-arm set with nothing from the CDN: 34 pinned
 packages, 32 of them unpacked and used by the build, and one engine source change (see
@@ -60,7 +60,7 @@ Things that cost real time to find, recorded so they do not have to be found twi
   alone. Both were found by the engine link, not by anything we generate.
 - **A lockfile pins local recipes too.** Editing one produces a new recipe revision, and
   the lockfile keeps resolving the revision from before the edit, so the build runs the
-  old recipe and the change looks like it did nothing. `3rdparty.py export` now moves
+  old recipe and the change looks like it did nothing. `conan 3p:export` now moves
   those entries forward; Conan Center entries stay pinned, which is the point of the file.
 - **NvCloth's compiler flags are dead code.** Its mac cmake chooses architecture with
   `IF (DEFINED PX_32BIT) ... ELSEIF() ... ENDIF()`, and an `ELSEIF()` with no condition is
@@ -69,18 +69,23 @@ Things that cost real time to find, recorded so they do not have to be found twi
   mean nothing overwrites what the recipe passes on the command line.
 - **A profile's `[conf]` is not part of a package id.** Edit one and the cached binary
   still looks current, so `--build=missing` reuses it and the change silently does
-  nothing. `tools/3rdparty.py --rebuild` forces the build; CI keeps the profile hash in
+  nothing. `conan 3p:package --rebuild` forces the build; CI keeps the profile hash in
   its own cache key segment so `restore-keys` cannot serve a stale binary either.
 - **`--only` still builds and deploys the whole dependency graph.** Options therefore go
   on for every catalog entry, not just the selected one: scoped to the selection alone,
   building one package republishes its dependencies with their recipe defaults and
   quietly undoes an earlier full build.
-- **Shiboken needs the libclang Qt publishes, not LLVM's own release binaries.** With
-  LLVM's, it resolves `QDirListing::IteratorFlag` onto `QDirIterator`'s enum and emits
-  wrappers referencing a `Default` member that does not exist. What was actually
-  measured: Qt's 20.1.3 works, LLVM's 20.1.8 and 22.1.8 both fail that way. That leaves
-  Qt's patches and an upstream change after 20.1.3 as competing explanations -- building
-  against LLVM's own 20.1.3 would separate them, and has not been done.
+- **PySide 6.10.2 needs the libclang Qt publishes, not LLVM's own release binaries.**
+  With LLVM's, shiboken binds QDirListing's constructor to `QFlags<QDirIterator::
+  IteratorFlag>` and emits `QDirIterator::IteratorFlag::Default`, which does not exist:
+  both classes declare an enum called `IteratorFlag`, QDirListing's a scoped one with
+  `Default` and QDirIterator's an unscoped one without. Controlled for version: Qt's
+  20.1.3-based build works, and LLVM's own 20.1.3, 20.1.8 and 22.1.8 all fail the same
+  way. So it is Qt's build, not the LLVM version.
+
+  It is also specific to this PySide. 6.11 builds against LLVM's own releases, so the
+  fix is on PySide's side, and moving the Qt and PySide pair to 6.11 would retire the
+  libclang recipe entirely.
 - **A buildenv only reaches `self.run` when env scripts are generated.** Packaging turns
   that off, so a `tool_requires` that exports variables silently contributes nothing and
   the build picks up whatever the machine has. PySide passes libclang's path explicitly
