@@ -59,7 +59,8 @@ class SquishCcrConan(ConanFile):
         if str(self.settings.arch) in ("armv8", "armv8.3"):
             # squish-ccr is written against SSE; sse2neon maps those intrinsics to NEON.
             staging = os.path.join(self.build_folder, "sse2neon")
-            get(self, **self.conan_data["sse2neon"], destination=staging, strip_root=True)
+            get(self, **self.conan_data["sse2neon"][self.version],
+                destination=staging, strip_root=True)
             copy(self, "sse2neon.h", staging, self.source_folder)
             copy(self, "LICENSE", staging,
                  os.path.join(self.package_folder, "licenses"))

@@ -28,9 +28,10 @@ class IspcTexCompConan(ConanFile):
              os.path.join(self.export_sources_folder, "patches"))
 
     def validate(self):
-        if str(self.settings.os) not in self.conan_data["ispc"]:
+        ispc = self.conan_data["ispc"][self.version]
+        if str(self.settings.os) not in ispc:
             raise ConanInvalidConfiguration(f"no ISPC compiler for {self.settings.os}")
-        by_arch = self.conan_data["ispc"][str(self.settings.os)]
+        by_arch = ispc[str(self.settings.os)]
         if str(self.settings.arch) not in by_arch:
             raise ConanInvalidConfiguration(
                 f"no ISPC compiler for {self.settings.os}/{self.settings.arch}")
@@ -48,7 +49,7 @@ class IspcTexCompConan(ConanFile):
         Fetched here rather than in source() because which build it needs depends on the
         host, and source() runs once for all configurations.
         """
-        ispc = self.conan_data["ispc"][str(self.settings.os)][str(self.settings.arch)]
+        ispc = self.conan_data["ispc"][self.version][str(self.settings.os)][str(self.settings.arch)]
         destination = os.path.join(self.source_folder, "ISPC", ispc["directory"])
         os.makedirs(destination, exist_ok=True)
 
@@ -83,6 +84,7 @@ class IspcTexCompConan(ConanFile):
             self.run(
                 f'xcodebuild PLATFORM_PREFERRED_ARCH={architecture} build '
                 f'-scheme ispc_texcomp -project ispc_texcomp.xcodeproj '
+                f'-configuration {self.settings.build_type} '
                 f'-destination "{destination}" '
                 f'-derivedDataPath "{os.path.join(self.build_folder, "DerivedData")}"',
                 cwd=self.source_folder,

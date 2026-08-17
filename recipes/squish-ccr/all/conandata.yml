@@ -11,5 +11,6 @@ patches:
 
 # ARM builds translate the SSE intrinsics with sse2neon, exactly as the previous build did.
 sse2neon:
-  url: "https://github.com/DLTcollab/sse2neon/archive/refs/tags/v1.6.0.tar.gz"
-  sha256: "06f4693219deccb91b457135d836fc514a1c0a57e9fa66b143982901d2d19677"
+  deb557d:
+    url: "https://github.com/DLTcollab/sse2neon/archive/refs/tags/v1.6.0.tar.gz"
+    sha256: "06f4693219deccb91b457135d836fc514a1c0a57e9fa66b143982901d2d19677"

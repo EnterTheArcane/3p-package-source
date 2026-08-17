@@ -9,7 +9,6 @@ the CI runner; Android, iOS, Emscripten and non-native architectures cross-compi
 | `windows-arm` | Windows ARM64 | Windows x86-64 |
 | `linux-x64` | Linux x86-64 | Linux x86-64 |
 | `linux-arm` | Linux ARM64 | Linux x86-64 |
-| `mac-x64` | macOS x86-64 | macOS ARM64 |
 | `mac-arm` | macOS ARM64 | macOS ARM64 |
 | `android-arm` | Android ARM64 | Linux x86-64 |
 | `android-x64` | Android x86-64 | Linux x86-64 |

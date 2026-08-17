@@ -122,10 +122,16 @@ jobs:
 
           for reference in "${references[@]}"; do
             echo "::group::$reference"
-            graph="$(conan graph info --requires="$reference" \
-              -pr:h="profiles/${{ matrix.platform }}" \
-              -pr:b="profiles/${{ matrix.build_profile }}" \
-              --update --filter=binary 2>&1)"
+            if graph="$(conan graph info --requires="$reference" \
+                -pr:h="profiles/${{ matrix.platform }}" \
+                -pr:b="profiles/${{ matrix.build_profile }}" \
+                --update --filter=binary 2>&1)"; then
+              :
+            else
+              graph_status=$?
+              echo "$graph" >&2
+              exit "$graph_status"
+            fi
             if grep -q 'binary: Invalid' <<< "$graph"; then
               echo "$graph"
               echo "Skipping $reference: invalid for ${{ matrix.platform }}"

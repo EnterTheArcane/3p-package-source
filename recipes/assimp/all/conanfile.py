@@ -166,13 +166,13 @@ class AssimpConan(ConanFile):
         self.requires("minizip/1.2.13")
         self.requires("pugixml/1.14")
         self.requires("utfcpp/4.0.1")
-        self.requires("zlib/[>=1.2.11 <2]")
+        self.requires("zlib/1.3.1")
         if self._depends_on_kuba_zip:
             self.requires("kuba-zip/0.3.0")
         if self._depends_on_poly2tri:
             self.requires("poly2tri/cci.20130502")
         if self._depends_on_rapidjson:
-            self.requires("rapidjson/cci.20230929")
+            self.requires("rapidjson/cci.20250205")
         if self._depends_on_draco:
             self.requires("draco/1.5.7")
         if self._depends_on_clipper:

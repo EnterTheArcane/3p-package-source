@@ -75,7 +75,7 @@ class LibtiffConan(ConanFile):
 
     def requirements(self):
         if self.options.zlib:
-            self.requires("zlib/[>=1.2.11 <2]")
+            self.requires("zlib/1.3.1")
         if self.options.libdeflate:
             self.requires("libdeflate/[>=1.19 <2]")
         if self.options.lzma:
@@ -89,7 +89,7 @@ class LibtiffConan(ConanFile):
         if self.options.jbig:
             self.requires("jbig/20160605")
         if self.options.zstd:
-            self.requires("zstd/[~1.5]")
+            self.requires("zstd/1.5.7")
         if self.options.webp:
             self.requires("libwebp/[>=1.3.2 <2]")
 

@@ -13,14 +13,15 @@ import os
 import sys
 
 PLATFORMS = {
-    "windows-x64": ("windows-2025", "windows-x64"),
-    "windows-arm": ("windows-2025", "windows-x64"),
+    # windows-2025 moved to Visual Studio 2026. O3DE's MSVC 19.4 profiles require
+    # the Visual Studio 2022 image, including when cross-compiling ARM64.
+    "windows-x64": ("windows-2022", "windows-x64"),
+    "windows-arm": ("windows-2022", "windows-x64"),
     "linux-x64": ("ubuntu-24.04", "linux-x64"),
     "linux-arm": ("ubuntu-24.04", "linux-x64"),
     "android-arm": ("ubuntu-24.04", "linux-x64"),
     "android-x64": ("ubuntu-24.04", "linux-x64"),
     "emscripten": ("ubuntu-24.04", "linux-x64"),
-    "mac-x64": ("macos-26", "mac-arm"),
     "mac-arm": ("macos-26", "mac-arm"),
     "ios-arm": ("macos-26", "mac-arm"),
     "ios-simulator": ("macos-26", "mac-arm"),

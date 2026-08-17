@@ -28,10 +28,3 @@ openimageio/*:tools.cmake.cmaketoolchain:extra_variables={"USE_WEBP": "OFF"}
 # CMake 4 refuses outright. This keeps them configurable without forking their recipes.
 [buildenv]
 CMAKE_POLICY_VERSION_MINIMUM=3.5
-
-# freetype requires zlib-ng rather than zlib and offers no option to choose. Left alone
-# it would put a second compression library into the engine, and one we do not ship, so
-# freetype would link against symbols that never arrive. zlib-ng is API compatible, so
-# point it at the zlib we do ship. Keep this version matching recipes/zlib/config.yml.
-[replace_requires]
-zlib-ng/*: zlib/1.3.1

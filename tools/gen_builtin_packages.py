@@ -56,7 +56,6 @@ ENGINE_FILES = {
     "windows-arm": ("Windows", "BuiltInPackages_windows_arm64.cmake"),
     "linux-x64": ("Linux", "BuiltInPackages_linux_x86_64.cmake"),
     "linux-arm": ("Linux", "BuiltInPackages_linux_aarch64.cmake"),
-    "mac-x64": ("Mac", "BuiltInPackages_mac_x86_64.cmake"),
     "mac-arm": ("Mac", "BuiltInPackages_mac_arm64.cmake"),
     "android-arm": ("Android", "BuiltInPackages_android.cmake"),
     "android-x64": ("Android", "BuiltInPackages_android_x86_64.cmake"),

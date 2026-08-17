@@ -7,21 +7,22 @@ sources:
 # Silicon needs a much newer release than the other hosts, which is why the versions
 # differ.
 ispc:
-  Macos:
-    armv8:
-      url: "https://github.com/ispc/ispc/releases/download/v1.29.1/ispc-v1.29.1-macOS.arm64.tar.gz"
-      directory: "osx"
-    x86_64:
-      url: "https://github.com/ispc/ispc/releases/download/v1.16.1/ispc-v1.16.1-macOS.tar.gz"
-      directory: "osx"
-  Linux:
-    x86_64:
-      url: "https://github.com/ispc/ispc/releases/download/v1.16.1/ispc-v1.16.1-linux.tar.gz"
-      directory: "linux"
-  Windows:
-    x86_64:
-      url: "https://github.com/ispc/ispc/releases/download/v1.16.1/ispc-v1.16.1-windows.zip"
-      directory: "win"
+  36b80aa:
+    Macos:
+      armv8:
+        url: "https://github.com/ispc/ispc/releases/download/v1.29.1/ispc-v1.29.1-macOS.arm64.tar.gz"
+        directory: "osx"
+      x86_64:
+        url: "https://github.com/ispc/ispc/releases/download/v1.16.1/ispc-v1.16.1-macOS.tar.gz"
+        directory: "osx"
+    Linux:
+      x86_64:
+        url: "https://github.com/ispc/ispc/releases/download/v1.16.1/ispc-v1.16.1-linux.tar.gz"
+        directory: "linux"
+    Windows:
+      x86_64:
+        url: "https://github.com/ispc/ispc/releases/download/v1.16.1/ispc-v1.16.1-windows.zip"
+        directory: "win"
 
 # Two variants: the Apple Silicon one also retargets the ISPC kernels to arm64/neon,
 # without which they compile as x86_64 and fail to link.

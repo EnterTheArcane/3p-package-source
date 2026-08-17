@@ -136,9 +136,9 @@ pull request that repoints the package names, not here.
 - **Versions** track the latest on Conan Center, except where the engine depends on a
   particular API: Lua stays on 5.4, and OpenSSL stays on 3.6.3 rather than 4.x. OpenSSL
   moving from 1.1.1 to 3.x is the largest engine-visible change.
-- **freetype** is redirected from `zlib-ng` back to `zlib`; see `profiles/_common`. It is
-  also built without PNG, as the previous package was: the engine links Freetype on its
-  own, so a Freetype that calls into libpng cannot be linked at all.
+- **freetype** requires the repository's `zlib` recipe directly instead of bringing in
+  `zlib-ng`. It is also built without PNG, as the previous package was: the engine links
+  Freetype on its own, so a Freetype that calls into libpng cannot be linked at all.
 - **DXC** stays on the O3DE fork. Of its eight commits, four are cherry picks now upstream,
   but `dxsc`, the SPIR-V invariant decoration and `-fvk-disable-depth-hint` are not.
   Rebasing the fork onto a newer upstream would drop the redundant four and get a newer

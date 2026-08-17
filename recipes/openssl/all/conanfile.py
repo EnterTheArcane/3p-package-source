@@ -148,7 +148,7 @@ class OpenSSLConan(ConanFile):
 
     def requirements(self):
         if not self.options.no_zlib:
-            self.requires("zlib/[>=1.2.11 <2]")
+            self.requires("zlib/1.3.1")
         if self._fips_module_version:
             self.output.info(f"Using FIPS module from openssl/{self._fips_module_version}")
             self.requires(

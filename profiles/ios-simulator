@@ -8,7 +8,7 @@ os.version=14.0
 os.sdk=iphonesimulator
 arch=armv8
 compiler=apple-clang
-compiler.version=17
+compiler.version=21
 compiler.cppstd=20
 compiler.libcxx=libc++
 

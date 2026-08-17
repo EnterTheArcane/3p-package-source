@@ -95,12 +95,12 @@ class OpenImageIOConan(ConanFile):
 
     def requirements(self):
         # Required libraries
-        self.requires("zlib/[>=1.2.11 <2]")
+        self.requires("zlib/1.3.1")
         if Version(self.version) < "3.0":
             self.requires("boost/1.84.0")
-        self.requires("libtiff/[>=4.6.0 <5]")
+        self.requires("libtiff/4.7.2")
         self.requires("imath/[>3.1.9 <4]", transitive_headers=True)
-        self.requires("openexr/[>=3.2.3 <4]")
+        self.requires("openexr/3.4.13")
         if self.options.with_libjpeg == "libjpeg":
             self.requires("libjpeg/[>=9f]")
         elif self.options.with_libjpeg == "libjpeg-turbo":
@@ -114,9 +114,9 @@ class OpenImageIOConan(ConanFile):
 
         # Optional libraries
         if self.options.with_libpng:
-            self.requires("libpng/[>=1.6 <2]")
+            self.requires("libpng/1.6.58")
         if self.options.with_freetype:
-            self.requires("freetype/2.13.2")
+            self.requires("freetype/2.14.3")
         if self.options.get_safe("with_opencolorio", True):
             self.requires("opencolorio/[>=2.3.1 <4]")
         if self.options.with_opencv:

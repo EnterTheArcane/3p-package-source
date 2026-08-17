@@ -16,6 +16,7 @@ compiler.libcxx=libstdc++11
 
 [conf]
 user.o3de:platform=linux-arm
+tools.build:compiler_executables={"c": "clang-18", "cpp": "clang++-18"}
 tools.build:cflags=["--target=aarch64-linux-gnu"]
 tools.build:cxxflags=["--target=aarch64-linux-gnu"]
 tools.build:exelinkflags=["--target=aarch64-linux-gnu"]
