@@ -10,3 +10,6 @@ compiler.libcxx=libstdc++11
 
 [options]
 *:fPIC=True
+
+[conf]
+user.o3de:platform=linux-x64

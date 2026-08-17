@@ -6,21 +6,19 @@ on:
     paths:
       - recipes/**
       - profiles/**
-      - consumer/**
       - extensions/**
       - tools/**
-      - conan.lock
       - .github/**
+      - pyproject.toml
   push:
     branches: [main, development]
     paths:
       - recipes/**
       - profiles/**
-      - consumer/**
       - extensions/**
       - tools/**
-      - conan.lock
       - .github/**
+      - pyproject.toml
   workflow_dispatch:
     inputs:
       platform:
@@ -65,12 +63,15 @@ jobs:
         with:
           python-version: "3.12"
 
-      # pyproject.toml pins conan and ninja; the commands themselves are Conan
-      # extensions, which have to be installed into the Conan home to be found.
       - name: Install the toolchain
-        run: |
-          pip install .
-          conan config install . -sf=extensions -tf=extensions
+        run: pip install .
+
+      # The checkout is a Conan local-recipes-index remote. It has first priority, so an
+      # O3DE recipe overrides Conan Center while everything else falls through normally.
+      - name: Add O3DE Recipe Remote
+        run: >-
+          conan remote add o3de "$GITHUB_WORKSPACE"
+          --type=local-recipes-index --index=0 --force --allowed-packages="*"
 
       # Qt needs X11 headers and the ARM64 target needs a sysroot. Everything else,
       # including the Android NDK and the Emscripten toolchain, comes from Conan.
@@ -96,35 +97,55 @@ jobs:
       # served by restore-keys. Profiles carry [conf] entries, and conf does not take
       # part in a package id, so a cached binary built under the old profile still looks
       # current to --build=missing and would be reused with the change silently missing.
-      # A recipe or lockfile change is safe to restore from, since those do move ids.
+      # Recipe changes are safe to restore from because Conan gives them a new revision.
       - name: Cache
         uses: actions/cache@v4
         with:
           path: ~/.conan2
-          key: conan-${{ matrix.platform }}-${{ hashFiles('profiles/**') }}-${{ hashFiles('conan.lock', 'recipes/**/conanfile.py', 'recipes/**/conandata.yml') }}
+          key: conan-${{ matrix.platform }}-${{ hashFiles('profiles/**') }}-${{ hashFiles('recipes/**', 'extensions/deployers/**') }}
           restore-keys: |
             conan-${{ matrix.platform }}-${{ hashFiles('profiles/**') }}-
 
       - name: Build Packages
-        run: conan 3p:package ${{ matrix.platform }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          references=()
+          while IFS= read -r reference; do
+            references+=("$reference")
+          done < <(conan list '*' -r=o3de --format=compact |
+            sed -n 's/^  \([^ ][^ ]*\/[^ ][^ ]*\)$/\1/p')
+          if [ ${#references[@]} -eq 0 ]; then
+            echo "the o3de remote contains no recipes" >&2
+            exit 1
+          fi
 
-      # Exporting a local recipe moves its lockfile entry to the revision just exported.
-      # In CI that should never change anything: if it does, the lockfile in the branch
-      # was written before the recipe was last edited, and the build that just ran used
-      # a different recipe than the lockfile claims.
-      - name: Check Lockfile
-        run: git diff --exit-code conan.lock
+          for reference in "${references[@]}"; do
+            echo "::group::$reference"
+            graph="$(conan graph info --requires="$reference" \
+              -pr:h="profiles/${{ matrix.platform }}" \
+              -pr:b="profiles/${{ matrix.build_profile }}" \
+              --update --filter=binary 2>&1)"
+            if grep -q 'binary: Invalid' <<< "$graph"; then
+              echo "$graph"
+              echo "Skipping $reference: invalid for ${{ matrix.platform }}"
+              echo "::endgroup::"
+              continue
+            fi
+
+            conan install --requires="$reference" \
+              -pr:h="profiles/${{ matrix.platform }}" \
+              -pr:b="profiles/${{ matrix.build_profile }}" \
+              --update --build=missing \
+              --output-folder="build/${{ matrix.platform }}" \
+              --envs-generation=false \
+              --deployer="extensions/deployers/engine_package.py" \
+              --deployer-folder="packages/${{ matrix.platform }}"
+            echo "::endgroup::"
+          done
 
       - name: Validate Packages
-        run: conan 3p:validate ${{ matrix.platform }}
-
-      # A published package is immutable. Rebuilding one with different contents means
-      # somebody changed a recipe without bumping its rev in the catalog.
-      - name: Check Published Packages
-        if: vars.PROD_CDN != ''
-        env:
-          PROD_CDN: ${{ vars.PROD_CDN }}
-        run: python3 .github/scripts/check_published.py packages/${{ matrix.platform }}
+        run: python3 tools/validate_package.py packages/${{ matrix.platform }}
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4

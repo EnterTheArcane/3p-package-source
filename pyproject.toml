@@ -3,28 +3,16 @@ requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "o3de-third-party"
+name = "3p-package-source"
 version = "1.0.0"
 description = "Builds the prebuilt third party packages O3DE downloads at configure time"
 requires-python = ">=3.9"
 license = "Apache-2.0 OR MIT"
 
-# Pinned exactly, not to a range. A Conan release can change how a graph resolves or what
-# a package id hashes to, which would quietly produce different binaries on a machine that
-# happened to pick up a newer one. Everything else these tools import is standard library.
-#
-# ninja is here because every profile builds with it, so it is genuinely needed to build
-# rather than merely convenient; the wheel is upstream's own binary. cmake deliberately is
-# not: recipes that need a particular one already tool_require it, and a pip cmake ahead of
-# those on PATH would override that choice.
 dependencies = [
     "conan==2.31.2",
     "ninja==1.13.0",
 ]
 
-# Nothing here is importable: the commands are Conan extensions, installed with
-#   conan config install . -sf=extensions -tf=extensions
-# and they load their implementation out of the checkout they are run in. This file
-# exists to pin what has to be on the machine before any of that works.
 [tool.setuptools]
 packages = []

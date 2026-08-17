@@ -14,3 +14,6 @@ compiler.libcxx=libc++
 
 [options]
 *:fPIC=True
+
+[conf]
+user.o3de:platform=ios-arm

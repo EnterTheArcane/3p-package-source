@@ -15,6 +15,7 @@ compiler.libcxx=libstdc++11
 *:fPIC=True
 
 [conf]
+user.o3de:platform=linux-arm
 tools.build:cflags=["--target=aarch64-linux-gnu"]
 tools.build:cxxflags=["--target=aarch64-linux-gnu"]
 tools.build:exelinkflags=["--target=aarch64-linux-gnu"]

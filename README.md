@@ -1,66 +1,99 @@
-# O3DE third party packages
+# O3DE third-party packages
 
-This repository builds the prebuilt third party libraries that O3DE downloads at configure
-time. A package built here is a `.tar.xz` the engine fetches from a package server,
-unpacks, and resolves with `find_package`; nothing about that contract has changed.
+This repository builds the prebuilt third-party libraries that O3DE downloads at
+configure time. Conan 2 resolves and builds the dependency graph; the repository's
+deployer converts every resolved Conan binary into the four files expected by O3DE's
+package server.
 
-What has changed is how the packages are produced. Recipes, profiles and dependency
-resolution are [Conan 2](https://docs.conan.io/2/); a deployer turns the resolved graph
-into the package layout the engine expects. Libraries that Conan Center already packages
-well are consumed from there, and this repository holds a recipe only where the engine
-needs something Conan Center does not provide.
+## Setup
 
-## Getting started
+Install the pinned Conan and Ninja versions, then register this checkout as a local
+recipes index:
 
 ```bash
-pip install .                                        # conan and ninja, pinned
-conan config install . -sf=extensions -tf=extensions # the 3p: commands
-
-conan 3p:platforms              # target platforms and their package counts
-conan 3p:packages mac-arm       # what is built for one of them
-conan 3p:package mac-arm        # build and package everything for it
-conan 3p:validate mac-arm       # check the results against the engine contract
+pip install .
+conan remote add o3de "$(pwd)" \
+    --type=local-recipes-index --index=0 --force --allowed-packages="*"
 ```
 
-`package` writes to `packages/<platform>/`: four files per package, plus a manifest.
+`o3de` has first priority. Recipes in this checkout therefore override recipes with the
+same reference in Conan Center, while requirements not present here fall through to
+Conan Center normally. Built binaries use the regular Conan cache; no alternate Conan
+home, workspace, recipe export step, or package server is required.
 
-To use them in an engine before anything is published, point it at that folder:
+List the available O3DE recipes:
 
 ```bash
-cmake -B build -S . -DLY_PACKAGE_SERVER_URLS=file:///path/to/3PS/packages/mac-arm
+conan list '*' -r=o3de
 ```
 
-`tools/gen_builtin_packages.py` rewrites an engine checkout's package pins to match a
-built folder, which is what the promote workflow does when it opens its pull request.
+## Build and package
 
-## Layout
+`conan install` builds a requested package and any missing dependencies, then invokes the
+deployer. For example, on Apple Silicon:
 
-```
-recipes/<name>/      package.yml, and a conanfile.py only when we build it ourselves
-profiles/            one per target platform, plus _common
-consumer/            the aggregate that resolves a whole platform at once
-extensions/commands/3p/                   the conan 3p:* commands
-extensions/deployers/engine_package.py    turns resolved packages into engine packages
-tools/               what the commands do, plus the catalog and the validators
-docs/                the longer explanations
-.github/workflows/   build, promote, lockfile maintenance
+```bash
+conan install --requires=qt/6.10.2 \
+    -pr:h=profiles/mac-arm -pr:b=profiles/mac-arm \
+    --update --build=missing \
+    --output-folder=build/mac-arm --envs-generation=false \
+    --deployer=extensions/deployers/engine_package.py \
+    --deployer-folder=packages/mac-arm
 ```
 
-Every package is described by `recipes/<name>/package.yml`: its version, its `rev`, the
-CMake targets it answers to, and which platforms want it. A `conanfile.py` beside it means
-we build that one ourselves; without one, the recipe comes from Conan Center.
+Every host dependency is emitted as its own O3DE package. Recipes use `validate()` to
+reject targets O3DE does not build; `conan graph info` can preflight a recipe/profile pair
+without treating an invalid configuration as a command failure.
 
-## Documentation
+Keep `--update` when working from the local index. It makes Conan notice a new recipe
+revision even when that reference already exists in the local cache.
 
-- [Adding a package](docs/adding-a-package.md) — the fields, when a recipe is needed, and
-  why every dependency has to be accounted for
-- [Platforms](docs/platforms.md) — the eleven targets and what builds them
-- [Release process](docs/release-process.md) — how packages reach the CDN and the engine
-- [Migration status](docs/migration-status.md) — which recipes are ours and why, and the
-  problems that cost enough time to be worth writing down
+Validate the resulting package contract with:
+
+```bash
+python3 tools/validate_package.py packages/mac-arm
+python3 tools/engine_check.py packages/mac-arm --engine ../o3de
+```
+
+To consume the local packages from an engine checkout:
+
+```bash
+cmake -B build -S . \
+    -DLY_PACKAGE_SERVER_URLS=file:///absolute/path/to/3PS/packages/mac-arm
+```
+
+## Immutable package names
+
+Conan identifies a binary with its recipe revision, package ID, and package revision.
+O3DE archives follow the same content-addressed idea:
+
+```text
+<name>-<version>-<o3de-platform>-<deployment-sha256>
+```
+
+The deployment digest includes the complete Conan binary reference, packaged payload,
+generated or curated CMake files, descriptor metadata, file modes and the deployer. A
+recipe can keep the same semantic version while a changed build receives a new CDN-safe
+name automatically. There is no manually maintained `rev` field.
+
+## Repository layout
+
+```text
+recipes/<name>/config.yml                 Conan local-index version mapping
+recipes/<name>/all/conanfile.py           shared Conan recipe implementation
+profiles/                                 O3DE target profiles
+extensions/deployers/engine_package.py    Conan graph to O3DE archives
+tools/validate_package.py                 archive and CMake contract validation
+tools/engine_check.py                     end-to-end engine package resolution
+tools/gen_builtin_packages.py             engine package-pin generation
+docs/                                     package and release documentation
+```
+
+See [adding a package](docs/adding-a-package.md), [platforms](docs/platforms.md), and the
+[release process](docs/release-process.md) for the longer workflows.
 
 ## Licensing
 
-Package licenses come from the recipes and travel inside each package, with the path
-recorded in its `PackageInfo.json`. This repository is licensed under Apache-2.0 OR MIT;
-see [LICENSE.txt](LICENSE.txt).
+Package licenses come from Conan recipes and travel inside each deployed package, with
+their paths recorded in `PackageInfo.json`. This repository is licensed under
+Apache-2.0 OR MIT; see [LICENSE.txt](LICENSE.txt).

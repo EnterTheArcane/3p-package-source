@@ -16,13 +16,13 @@ build/
 # downloaded source and build tree next to the recipe. Recipes hold instructions, never
 # upstream sources. Narrow patterns on purpose: a recipe may legitimately export a file
 # from a src/ directory, and a blanket rule would drop it from the repository silently.
-recipes/*/src/*/
-recipes/*/src/*.c
-recipes/*/src/*.h
-recipes/*/build/
+recipes/*/all/src/*/
+recipes/*/all/src/*.c
+recipes/*/all/src/*.h
+recipes/*/all/build/
 
-# Conan writes environment scripts into the working directory. tools/3rdparty.py
-# redirects them, but `conan create` run by hand from the repo root leaves them behind.
+# Conan writes environment scripts into the working directory when a hand-run
+# `conan install` or `conan create` does not pass --envs-generation=false.
 conanbuild*
 conanrun*
 deactivate_conan*

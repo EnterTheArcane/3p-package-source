@@ -15,8 +15,9 @@ on:
     paths:
       - recipes/**
       - profiles/**
-      - consumer/**
-      - conan.lock
+      - extensions/deployers/**
+      - tools/**
+      - .github/**
 
 concurrency:
   group: promote-${{ github.ref }}
@@ -69,14 +70,6 @@ jobs:
         run: |
           for dir in packages/packages-*; do
             python3 tools/validate_package.py "$dir"
-          done
-
-      - name: Check Published Packages
-        env:
-          PROD_CDN: ${{ vars.PROD_CDN }}
-        run: |
-          for dir in packages/packages-*; do
-            python3 .github/scripts/check_published.py "$dir"
           done
 
       - name: Configure AWS Credentials

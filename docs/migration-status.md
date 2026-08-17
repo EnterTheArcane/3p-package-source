@@ -7,16 +7,17 @@ what is and is not yet proven.
 
 Everything under `recipes/` builds, passes `validate_package.py`, and is resolved by the
 engine's own package system through `engine_check.py`, with package hash and full content
-validation forced on. Run `conan 3p:packages` for the current inventory.
+validation forced on. Run `conan list '*' -r=o3de` for the current inventory.
 
 O3DE `development` builds against the mac-arm set with nothing from the CDN: 34 pinned
 packages, 32 of them unpacked and used by the build, and one engine source change (see
-below). The other ten platforms have profiles, a lockfile and a resolving dependency
-graph, and ios-arm builds and validates, but only mac-arm has been through an engine
+below). The other ten platforms have profiles and a resolving dependency graph, and
+ios-arm builds and validates, but only mac-arm has been through an engine
 build. The deleted tree remains in git history if a platform needs it as reference.
 
-Every package is built from a recipe in this repository. Most were adapted from Conan
-Center's, keeping upstream's build and replacing only the metadata the engine needs.
+The checkout is a local recipes index. Its recipes override Conan Center by reference;
+requirements not present here fall through to Conan Center. Most local recipes were
+adapted from Conan Center while keeping their upstream build logic.
 These are ours for a reason beyond that:
 
 | Package | Why it needs a recipe |
@@ -58,10 +59,6 @@ Things that cost real time to find, recorded so they do not have to be found twi
   as if the package were broken. Freetype is the mirror image: it calls into libpng, so
   a package built with PNG support cannot be linked by a target that takes Freetype
   alone. Both were found by the engine link, not by anything we generate.
-- **A lockfile pins local recipes too.** Editing one produces a new recipe revision, and
-  the lockfile keeps resolving the revision from before the edit, so the build runs the
-  old recipe and the change looks like it did nothing. `conan 3p:export` now moves
-  those entries forward; Conan Center entries stay pinned, which is the point of the file.
 - **NvCloth's compiler flags are dead code.** Its mac cmake chooses architecture with
   `IF (DEFINED PX_32BIT) ... ELSEIF() ... ENDIF()`, and an `ELSEIF()` with no condition is
   never true, so neither branch runs and `CMAKE_CXX_FLAGS` stays empty. The previous build
@@ -69,12 +66,11 @@ Things that cost real time to find, recorded so they do not have to be found twi
   mean nothing overwrites what the recipe passes on the command line.
 - **A profile's `[conf]` is not part of a package id.** Edit one and the cached binary
   still looks current, so `--build=missing` reuses it and the change silently does
-  nothing. `conan 3p:package --rebuild` forces the build; CI keeps the profile hash in
-  its own cache key segment so `restore-keys` cannot serve a stale binary either.
-- **`--only` still builds and deploys the whole dependency graph.** Options therefore go
-  on for every catalog entry, not just the selected one: scoped to the selection alone,
-  building one package republishes its dependencies with their recipe defaults and
-  quietly undoes an earlier full build.
+  nothing. `--build=<name>/*` forces that binary; CI keeps the profile hash in its own
+  cache key segment so `restore-keys` cannot serve a stale binary either.
+- **Every host dependency is its own O3DE package.** The deployer follows the resolved
+  graph and generates dependency links between package targets. No dependency payload is
+  merged into another recipe's archive.
 - **PySide 6.10.2 needs the libclang Qt publishes, not LLVM's own release binaries.**
   With LLVM's, shiboken binds QDirListing's constructor to `QFlags<QDirIterator::
   IteratorFlag>` and emits `QDirIterator::IteratorFlag::Default`, which does not exist:
@@ -96,27 +92,27 @@ Things that cost real time to find, recorded so they do not have to be found twi
 
 ## Where package metadata lives
 
-In the recipe. `version`, `rev` and `platforms` are class attributes, read out of the
-source without running it, because the consumer has to know which packages a platform
-wants before Conan has a graph to ask. Conan's own `conan inspect` reports only the
-attributes it knows about, so it cannot carry these.
+Only Conan-native declarations remain. `config.yml` exposes versions through the local
+index; `validate()` defines supported O3DE configurations; requirements define the graph;
+and `cpp_info` provides usage and CMake names. `upload_policy = "skip"` marks build-only
+packages such as `libclang`.
 
-Everything else comes from the resolved conanfile at deploy time: the engine's target
-name from `cmake_file_name`, and `payload`, `bundle`, `bundle_targets`, `includedirs`
-and `defines` as class attributes. A recipe without `platforms` is a build tool that is
-never shipped, which is what `libclang` is.
-
-Bumping `rev` changes the recipe revision and so rebuilds the package. That costs
-nothing in practice: `rev` is bumped when the contents changed, which already required
-a rebuild.
+The deployer gives every package a payload directory matching its recipe name and derives
+an immutable deployment revision from the resolved Conan binary plus the staged O3DE
+image. There is no release counter, platform catalog, bundle list, or sidecar deployment
+manifest.
 
 ## What was deleted
 
 `package-system/`, `Scripts/`, the five `package_build_list_host_*.json` files,
 `package.sh`, `package.bat`, the `SPDX-Licenses` files, and the three workflows that drove
 them. Everything the recipes still need was vendored first: ten patches under
-`recipes/*/patches/` and ten curated cmake files under `recipes/*/cmake/`, all of which
+`recipes/*/all/patches/` and ten curated cmake files under `recipes/*/all/cmake/`, all of which
 build without reference to the deleted tree.
+
+The later experimental workspace, aggregate consumer, AST catalog, custom `conan 3p:*`
+commands and lockfile-rewriting layer were removed as well. The local index, normal Conan
+commands, profiles and deployer now form the complete build path.
 
 It stays in git history. The recipes for the platforms that have not been built yet were
 transposed from those scripts, and `git show` on an earlier commit is the reference if a
@@ -131,9 +127,6 @@ pull request that repoints the package names, not here.
 | --- | --- |
 | `Gems/GradientSignal/Code/Tests/EditorGradientSignalBakerTests.cpp` -- `read_image(OIIO::TypeDesc::FLOAT, data)` becomes `read_image(0, 0, 0, spec.nchannels, OIIO::TypeDesc::FLOAT, data)` | OpenImageIO 3.x dropped the overload that read every channel implicitly. One call site. |
 
-Deliberately not taken: moving benchmark past 1.7.1, which would need roughly 635 call
-sites updated across 31 files. See the deviations below.
-
 ## Known deviations from the old builds
 
 - **asn1** is not ported. It was listed only for iOS, its directory never existed in the
@@ -141,13 +134,8 @@ sites updated across 31 files. See the deviations below.
 - **PhysX 4** is not ported; it is deprecated in favour of PhysX 5.
 - **The AWS packages** are dropped.
 - **Versions** track the latest on Conan Center, except where the engine depends on a
-  particular API: Lua stays on 5.4, pybind11 on 2.x, and OpenSSL on 3.6.3 rather than
-  4.x. OpenSSL moving from 1.1.1 to 3.x is the largest engine-visible change.
-- **benchmark stays on 1.7.1**, the newest release the engine's own source compiles
-  against. 1.9 deprecates the const-ref `DoNotOptimize` overload and the global
-  `Benchmark` type, and the engine builds its tests with `-Werror`: 31 files and roughly
-  635 call sites would have to be updated first. That is an engine change, and until it
-  happens a 1.9 package is not a drop-in replacement.
+  particular API: Lua stays on 5.4, and OpenSSL stays on 3.6.3 rather than 4.x. OpenSSL
+  moving from 1.1.1 to 3.x is the largest engine-visible change.
 - **freetype** is redirected from `zlib-ng` back to `zlib`; see `profiles/_common`. It is
   also built without PNG, as the previous package was: the engine links Freetype on its
   own, so a Freetype that calls into libpng cannot be linked at all.

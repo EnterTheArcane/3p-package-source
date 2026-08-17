@@ -16,3 +16,6 @@ compiler.libcxx=c++_shared
 
 [tool_requires]
 android-ndk/r27c
+
+[conf]
+user.o3de:platform=android-arm

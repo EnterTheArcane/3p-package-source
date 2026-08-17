@@ -5,23 +5,18 @@
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 #
 
-"""Turn resolved Conan packages into packages the engine can consume.
+"""Deploy resolved Conan binaries as immutable packages understood by O3DE.
 
-The engine downloads a flat `<name>.tar.xz` from a package server, extracts it into
-`<unpack>/<name>/`, prepends that folder to CMAKE_MODULE_PATH and calls
-find_package(<target> MODULE). This deployer produces exactly that shape, so recipes
-stay ordinary Conan recipes and nothing here leaks into them.
+Every host-context node in the Conan graph becomes its own archive. Dependencies are
+never merged: generated Find modules download and resolve the packages they depend on.
 
-Per package it writes four flat files:
-
-    <package>.tar.xz
-    <package>.tar.xz.SHA256SUMS          hash of the archive
-    <package>.tar.xz.content.SHA256SUMS  hash of every file inside it
-    <package>.PackageInfo.json           copy of the descriptor inside the archive
+The filename suffix is a deployment revision. Like Conan's package revision (PREV), it
+is derived from the binary identity and contents rather than maintained by hand. It also
+includes the generated O3DE files and this deployer, which are outside Conan's package
+folder and therefore outside PREV.
 """
 
 import hashlib
-import importlib.util
 import json
 import lzma
 import os
@@ -38,21 +33,8 @@ CONTENT_HASH_EXT = ".tar.xz.content.SHA256SUMS"
 MANIFEST_NAME = "SHA256SUMS"
 DESCRIPTOR_NAME = "PackageInfo.json"
 
-# Conan bookkeeping that has no place in a shipped package.
 EXCLUDED_FROM_PAYLOAD = ("conaninfo.txt", "conanmanifest.txt")
-
 _BUFFER = 1024 * 1024 * 10
-
-
-def _load_catalog():
-    path = os.path.join(ROOT, "tools", "catalog.py")
-    spec = importlib.util.spec_from_file_location("_3p_catalog", path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
-catalog = _load_catalog()
 
 
 # --------------------------------------------------------------------------------------
@@ -60,11 +42,6 @@ catalog = _load_catalog()
 # --------------------------------------------------------------------------------------
 
 def _hash_file(path):
-    """SHA256 of a file's contents, following symlinks.
-
-    Following links is what lets a package built on macOS or Linux be archived and
-    verified anywhere else.
-    """
     hasher = hashlib.sha256()
     with open(path, "rb") as handle:
         for chunk in iter(lambda: handle.read(_BUFFER), b""):
@@ -72,46 +49,53 @@ def _hash_file(path):
     return hasher.hexdigest()
 
 
+def _package_reference(node):
+    """Return Conan's complete, timestamp-free RREV:package-id#PREV identity."""
+    pref = node.pref
+    return pref.repr_notime() if hasattr(pref, "repr_notime") else repr(pref)
+
+
 def _payload_files(folder):
-    """Every file in the staged package, relative to its root, sorted.
-
-    Symlinks to files stay symlinks, and are hashed by what they point at. Symlinks to
-    directories are walked into and their contents recorded as ordinary files, so a
-    linked directory arrives as a real one holding a second copy of the content.
-
-    That asymmetry is not an accident: it is what the engine already receives, and both
-    halves matter. macOS frameworks are built out of directory links -- Qt's
-    include/QtCore and every framework's Versions/Current -- and dropping them would
-    ship a package with no headers. Keeping them as links instead would leave the engine
-    resolving paths that climb out of the package.
-
-    Directories are tracked by real path so a link pointing back up its own tree cannot
-    send this into a loop.
-    """
+    """Return every staged file, materialising directory symlinks without looping."""
     found = []
 
     def walk(directory, ancestors):
         for entry in sorted(os.scandir(directory), key=lambda item: item.name):
             if entry.is_dir():
                 resolved = os.path.realpath(entry.path)
-                # Only a link back into the branch above would loop. Two names for the
-                # same directory side by side, as with Versions/A and Versions/Current,
-                # are both walked, which is what materialises each of them.
                 if resolved in ancestors:
                     continue
                 walk(entry.path, ancestors | {resolved})
             elif entry.is_file():
                 found.append(os.path.relpath(entry.path, folder).replace(os.sep, "/"))
-            # Anything else is a dangling symlink and is left out.
 
     walk(folder, {os.path.realpath(folder)})
     return sorted(found)
 
 
+def _deployment_revision(node, stage, descriptor):
+    """Content address for the complete O3DE image before its self-naming descriptor."""
+    hasher = hashlib.sha256()
+    hasher.update(b"o3de-engine-package-v2\0")
+    hasher.update(_package_reference(node).encode("utf8"))
+    hasher.update(b"\0")
+    hasher.update(_hash_file(__file__).encode("ascii"))
+    hasher.update(b"\0")
+    hasher.update(json.dumps(descriptor, sort_keys=True, separators=(",", ":")).encode("utf8"))
+
+    for relpath in _payload_files(stage):
+        path = os.path.join(stage, relpath)
+        info = os.lstat(path)
+        hasher.update(b"\0" + relpath.encode("utf8") + b"\0")
+        hasher.update(str(stat.S_IMODE(info.st_mode)).encode("ascii") + b"\0")
+        if os.path.islink(path):
+            hasher.update(b"link\0" + os.readlink(path).encode("utf8") + b"\0")
+        hasher.update(_hash_file(path).encode("ascii"))
+    return hasher.hexdigest()
+
+
 def _writable(tarinfo):
-    """Archived files must not be read-only; the engine deletes and replaces them."""
-    tarinfo.mode = tarinfo.mode | stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH
-    # Fixed ownership and timestamps keep the archive byte-identical between builds.
+    tarinfo.mode |= stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH
     tarinfo.mtime = 0
     tarinfo.uid = tarinfo.gid = 0
     tarinfo.uname = tarinfo.gname = ""
@@ -132,7 +116,7 @@ def _archive(stage, relpaths, manifest_text, destination):
 
 
 # --------------------------------------------------------------------------------------
-# cmake generation
+# CMake generation
 # --------------------------------------------------------------------------------------
 
 _HEADER = """#
@@ -150,6 +134,15 @@ _LIB_PATTERNS = {
 }
 
 
+def _unique(items):
+    seen, result = set(), []
+    for item in items:
+        if item is not None and item not in seen:
+            seen.add(item)
+            result.append(item)
+    return result
+
+
 def _find_library(lib, libdirs, os_name):
     patterns = _LIB_PATTERNS.get(os_name, _LIB_PATTERNS["_default"])
     for libdir in libdirs:
@@ -160,27 +153,12 @@ def _find_library(lib, libdirs, os_name):
     return None
 
 
-def _payload_relative(relative, payload):
-    """A path written relative to the payload, as a config file has to express it."""
-    prefix = "${CMAKE_CURRENT_LIST_DIR}" if payload == "." else "${CMAKE_CURRENT_LIST_DIR}/" + payload
-    return f"{prefix}/{relative.strip('/')}"
-
-
 def _cmake_path(absolute, package_folder, payload):
-    """Rebase a path in the Conan cache onto where it lands inside the package.
-
-    cpp_info describes the package as it sits in the cache; the deployer copies that
-    tree under `<payload>/`, so every emitted path has to be translated or the config
-    file would point at a cache folder that consumers do not have. A payload of "."
-    means the tree sits at the package root instead, which is how the engine expects to
-    find Python's framework.
-    """
     rel = os.path.relpath(absolute, package_folder).replace(os.sep, "/")
     if rel.startswith(".."):
         return None
     rel = "" if rel == "." else "/" + rel
-    prefix = "${CMAKE_CURRENT_LIST_DIR}" if payload == "." else "${CMAKE_CURRENT_LIST_DIR}/" + payload
-    return prefix + rel
+    return "${CMAKE_CURRENT_LIST_DIR}/" + payload + rel
 
 
 def _version_variables(target, version):
@@ -200,170 +178,164 @@ def _version_variables(target, version):
     ])
 
 
-def _unique(items):
-    seen, result = set(), []
-    for item in items:
-        if item is not None and item not in seen:
-            seen.add(item)
-            result.append(item)
-    return result
+def _engine_target(name, cpp_info):
+    return str(cpp_info.get_property("cmake_file_name") or name)
 
 
-def collect_usage(nodes, payload, os_name):
-    """Merge the build information of a package and anything bundled into it."""
-    includedirs, resolved, missing = [], [], []
-    system_libs, frameworks, defines = [], [], []
+def _engine_aliases(cpp_info, target):
+    aliases = []
+    primary = cpp_info.get_property("cmake_target_name")
+    if primary:
+        aliases.append(str(primary))
+    aliases.extend(cpp_info.get_property("cmake_target_aliases") or [])
+    return [alias for alias in _unique(aliases) if alias != f"3rdParty::{target}"]
 
-    for node in nodes:
-        cpp_info = node.conanfile.cpp_info.aggregated_components()
-        package_folder = node.conanfile.package_folder
 
-        includedirs += [_cmake_path(d, package_folder, payload) for d in cpp_info.includedirs or []]
-        for lib in cpp_info.libs or []:
-            found = _find_library(lib, cpp_info.libdirs or [], os_name)
-            if found:
-                resolved.append(_cmake_path(found, package_folder, payload))
-            else:
-                missing.append(lib)
-        system_libs += cpp_info.system_libs or []
-        frameworks += cpp_info.frameworks or []
-        defines += cpp_info.defines or []
+def _dependencies(node, packaged_names):
+    dependencies = []
+    for dependency in node.conanfile.dependencies.host.values():
+        if dependency.ref is None:
+            continue
+        name = str(dependency.ref.name)
+        if name not in packaged_names or name == str(node.ref.name):
+            continue
+        dependencies.append((name, _engine_target(name, dependency.cpp_info)))
+    return _unique(dependencies)
+
+
+def _dependency_prelude(dependencies):
+    if not dependencies:
+        return ""
+    lines = [
+        "# Resolve separately packaged Conan dependencies when loaded by O3DE.",
+        "if (COMMAND ly_download_associated_package)",
+    ]
+    for _name, target in dependencies:
+        lines += [
+            f"    ly_download_associated_package({target})",
+            f"    find_package({target} REQUIRED MODULE)",
+        ]
+    lines += ["endif()", ""]
+    return "\n".join(lines)
+
+
+def _dependency_links(dependencies, target, indent="    "):
+    lines = []
+    for _name, dependency_target in dependencies:
+        lines += [
+            f"{indent}if (TARGET 3rdParty::{dependency_target})",
+            f"{indent}    set_property(TARGET 3rdParty::{target} APPEND PROPERTY "
+            f"INTERFACE_LINK_LIBRARIES 3rdParty::{dependency_target})",
+            f"{indent}endif()",
+        ]
+    return lines
+
+
+def _collect_usage(node, payload, os_name):
+    cpp_info = node.conanfile.cpp_info.aggregated_components()
+    package_folder = node.conanfile.package_folder
+
+    includedirs = [_cmake_path(path, package_folder, payload)
+                   for path in cpp_info.includedirs or []]
+    resolved, missing = [], []
+    for lib in cpp_info.libs or []:
+        found = _find_library(lib, cpp_info.libdirs or [], os_name)
+        if found:
+            resolved.append(_cmake_path(found, package_folder, payload))
+        else:
+            missing.append(lib)
 
     return {
         "includedirs": _unique(includedirs),
         "libraries": _unique(resolved),
         "missing": _unique(missing),
-        "system_libs": _unique(system_libs),
-        "frameworks": _unique(frameworks),
-        "defines": _unique(defines),
+        "system_libs": _unique(cpp_info.system_libs or []),
+        "frameworks": _unique(cpp_info.frameworks or []),
+        "defines": _unique(cpp_info.defines or []),
     }
 
 
-def usage_per_target(targets, nodes, payload, os_name):
-    """Decide which build information belongs to each target.
+def _generate_config(name, version, target, usage, aliases, dependencies):
+    body = [_HEADER, _dependency_prelude(dependencies)]
+    if usage["missing"]:
+        body.append("# Unresolved libraries reported by the recipe: "
+                    + ", ".join(usage["missing"]) + "\n")
 
-    A package that bundles another (OpenEXR shipping Imath) declares one target per
-    bundled package, in the same order. Pairing them keeps 3rdParty::Imath pointing at
-    Imath's libraries rather than everything in the archive. When the counts do not
-    line up there is nothing to pair on, so every target describes the whole package.
-    """
-    shared = collect_usage(nodes, payload, os_name)
-    if len(targets) > 1 and len(targets) == len(nodes):
-        paired = {}
-        for target, node in zip(targets, nodes):
-            usage = collect_usage([node], payload, os_name)
-            # Libraries are per target, but the headers are one tree: OpenEXR's own
-            # headers include Imath's by name, so a consumer of either target needs
-            # every include directory in the package.
-            usage["includedirs"] = shared["includedirs"]
-            usage["defines"] = shared["defines"]
-            paired[target] = usage
-        return paired
-
-    return {t: shared for t in targets}
-
-
-def _generate_config(name, version, targets, usage_map, aliases=None):
-    """Build a config file that declares the engine's 3rdParty:: targets.
-
-    Modelled on the hand written Find files this replaces: real imported targets
-    rather than interface ones, paths relative to the package, and the upstream
-    variables so the package also works as a drop in for CMake's own module.
-    """
-    body = [_HEADER]
-    missing = _unique([m for usage in usage_map.values() for m in usage["missing"]])
-    if missing:
-        body.append(f"# Unresolved libraries reported by the recipe: {', '.join(missing)}\n")
-
-    for target in targets:
-        usage = usage_map[target]
-        includedirs = usage["includedirs"]
-        resolved = usage["libraries"]
-
-        guard = f"3rdParty::{target}"
-        lines = [
-            f'if (NOT TARGET {guard})',
-            f'    set(_target "{guard}")',
+    includedirs = usage["includedirs"]
+    resolved = usage["libraries"]
+    lines = [
+        f"if (NOT TARGET 3rdParty::{target})",
+        f'    set(_target "3rdParty::{target}")',
+    ]
+    if includedirs:
+        joined = " ".join(f'"{path}"' for path in includedirs)
+        lines += [
+            f"    set({target}_INCLUDE_DIRS {joined})",
+            f"    set({target}_INCLUDE_DIR ${{{target}_INCLUDE_DIRS}})",
+        ]
+    if resolved:
+        joined = " ".join(f'"{path}"' for path in resolved)
+        lines += [
+            f"    set({target}_LIBRARIES {joined})",
+            f"    set({target}_LIBRARY ${{{target}_LIBRARIES}})",
         ]
 
-        if includedirs:
-            joined = " ".join(f'"{d}"' for d in includedirs)
-            lines += [
-                f"    set({target}_INCLUDE_DIRS {joined})",
-                f"    set({target}_INCLUDE_DIR ${{{target}_INCLUDE_DIRS}})",
-            ]
+    lines += [
+        "    " + _version_variables(target, version).replace("\n", "\n    "),
+        f"    set({target}_FOUND True)",
+        "",
+        f"    add_library(${{_target}} {'STATIC' if resolved else 'INTERFACE'} IMPORTED GLOBAL)",
+    ]
+    for alias in aliases:
+        lines.append(f"    add_library({alias} ALIAS ${{_target}})")
+    if resolved:
+        lines.append(f'    set_target_properties(${{_target}} PROPERTIES IMPORTED_LOCATION "{resolved[0]}")')
 
-        if resolved:
-            joined = " ".join(f'"{p}"' for p in resolved)
-            lines += [
-                f"    set({target}_LIBRARIES {joined})",
-                f"    set({target}_LIBRARY ${{{target}_LIBRARIES}})",
-            ]
+    link = list(resolved[1:]) + list(usage["system_libs"])
+    link += [f"-framework {framework}" for framework in usage["frameworks"]]
+    if link:
+        joined = ";".join(link)
+        lines.append(f'    set_target_properties(${{_target}} PROPERTIES INTERFACE_LINK_LIBRARIES "{joined}")')
+    lines += _dependency_links(dependencies, target)
 
-        lines.append("    " + _version_variables(target, version).replace("\n", "\n    "))
-        lines.append(f"    set({target}_FOUND True)")
-        lines.append("")
-
-        kind = "STATIC" if resolved else "INTERFACE"
-        lines.append(f"    add_library(${{_target}} {kind} IMPORTED GLOBAL)")
-
-        # Upstream-spelled aliases let this package stand in for CMake's own module,
-        # so a dependency doing find_package(ZLIB) links ours rather than the system copy.
-        for alias in (aliases or {}).get(target, []):
-            lines.append(f"    add_library({alias} ALIAS ${{_target}})")
-
-        if resolved:
-            lines.append(f'    set_target_properties(${{_target}} PROPERTIES IMPORTED_LOCATION "{resolved[0]}")')
-
-        # set_target_properties reads its arguments as property/value pairs, so a list
-        # has to arrive as one semicolon separated value rather than several words.
-        link = list(resolved[1:])
-        link += list(usage["system_libs"])
-        link += [f"-framework {f}" for f in usage["frameworks"]]
-        if link:
-            joined = ";".join(link)
-            lines.append(
-                f'    set_target_properties(${{_target}} PROPERTIES INTERFACE_LINK_LIBRARIES "{joined}")'
-            )
-
-        if usage["defines"]:
-            joined = ";".join(usage["defines"])
-            lines.append(
-                f'    set_target_properties(${{_target}} PROPERTIES INTERFACE_COMPILE_DEFINITIONS "{joined}")'
-            )
-
-        if includedirs:
-            # O3DE patches SYSTEM includes for toolchains that get them wrong; use its
-            # version when present so warnings from third party headers stay suppressed.
-            lines += [
-                "",
-                "    if (COMMAND ly_target_include_system_directories)",
-                f"        ly_target_include_system_directories(TARGET ${{_target}} INTERFACE ${{{target}_INCLUDE_DIRS}})",
-                "    else()",
-                f"        target_include_directories(${{_target}} SYSTEM INTERFACE ${{{target}_INCLUDE_DIRS}})",
-                "    endif()",
-            ]
-
+    if usage["defines"]:
+        joined = ";".join(usage["defines"])
+        lines.append(f'    set_target_properties(${{_target}} PROPERTIES INTERFACE_COMPILE_DEFINITIONS "{joined}")')
+    if includedirs:
         lines += [
             "",
-            "    if (NOT LY_VERSION_ENGINE_NAME)",
-            f'        message(STATUS "Using the O3DE version of {target} from ${{CMAKE_CURRENT_LIST_DIR}}")',
+            "    if (COMMAND ly_target_include_system_directories)",
+            f"        ly_target_include_system_directories(TARGET ${{_target}} INTERFACE ${{{target}_INCLUDE_DIRS}})",
+            "    else()",
+            f"        target_include_directories(${{_target}} SYSTEM INTERFACE ${{{target}_INCLUDE_DIRS}})",
             "    endif()",
-            "endif()",
-            "",
         ]
-        body.append("\n".join(lines))
-
+    lines += [
+        "",
+        "    if (NOT LY_VERSION_ENGINE_NAME)",
+        f'        message(STATUS "Using the O3DE version of {target} from ${{CMAKE_CURRENT_LIST_DIR}}")',
+        "    endif()",
+        "endif()",
+        "",
+    ]
+    body.append("\n".join(lines))
     return "\n".join(body)
 
 
-def _generate_find_shim(name, target):
-    """Module mode entry point. The engine calls find_package(<target> MODULE)."""
-    return (
-        f"{_HEADER}\n"
-        f"# Backwards compatible entry point for find_package({target} MODULE).\n"
-        f'include("${{CMAKE_CURRENT_LIST_DIR}}/{name}-config.cmake")\n'
-    )
+def _generate_find_shim(name, target, dependencies, curated):
+    lines = [
+        _HEADER,
+        f"# Backwards compatible entry point for find_package({target} MODULE).",
+        _dependency_prelude(dependencies),
+        f'include("${{CMAKE_CURRENT_LIST_DIR}}/{name}-config.cmake")',
+    ]
+    if curated:
+        lines += [
+            f"if (TARGET 3rdParty::{target})",
+            *_dependency_links(dependencies, target),
+            "endif()",
+        ]
+    return "\n".join(lines) + "\n"
 
 
 # --------------------------------------------------------------------------------------
@@ -380,53 +352,35 @@ def _copy_payload(source, destination):
 
 
 def _license_path(stage, payload):
-    """Package relative path to a license file, preferring Conan's licenses folder."""
-    prefix = "" if payload == "." else payload + "/"
+    prefix = payload + "/"
     licenses = os.path.join(stage, payload, "licenses")
     if os.path.isdir(licenses):
-        # A file, not whatever sorts first: a package that licenses several components
-        # can have directories in here, and the engine expects LicenseFile to be readable.
-        names = [n for n in sorted(os.listdir(licenses))
-                 if os.path.isfile(os.path.join(licenses, n))]
+        names = [name for name in sorted(os.listdir(licenses))
+                 if os.path.isfile(os.path.join(licenses, name))]
         if names:
             return f"{prefix}licenses/{names[0]}"
 
     root = os.path.join(stage, payload)
     for name in sorted(os.listdir(root)) if os.path.isdir(root) else []:
         if name.upper().startswith(("LICENSE", "COPYING")):
-            return f"{prefix}{name}"
+            return prefix + name
     return None
 
 
 def _copy_curated_cmake(name, stage):
-    """Copy hand written cmake for this recipe onto the package root.
-
-    Whatever recipes/<name>/cmake/ contains lands at the top of the package, which is
-    also where a curated config file or Find module overrides the generated one. Qt uses
-    this for its Platform/ subdirectory as well as its config file.
-    """
-    source = os.path.join(ROOT, "recipes", name, "cmake")
+    source = os.path.join(ROOT, "recipes", name, "all", "cmake")
     if not os.path.isdir(source):
         return set()
-
     shutil.copytree(source, stage, symlinks=True, dirs_exist_ok=True)
     return set(os.listdir(source))
 
 
 def _source_url(conanfile):
-    """Where this package's source came from, for the descriptor's URL.
-
-    A recipe states this once, in conandata.yml, and it says something more useful than a
-    project's home page: it is the exact archive the package was built from. The shape
-    varies -- some recipes key sources by version, others by version then os and arch --
-    so the first url found wins.
-    """
     def search(value):
         if isinstance(value, dict):
             url = value.get("url")
             if isinstance(url, str):
                 return url
-            # Several recipes list mirrors; the first is the one to record.
             if isinstance(url, (list, tuple)) and url and isinstance(url[0], str):
                 return url[0]
             for nested in value.values():
@@ -444,132 +398,62 @@ def _source_url(conanfile):
     found = search(data.get("sources"))
     if found:
         return found
-
-    # A recipe that clones instead of downloading an archive has no sources entry; the
-    # repository it clones is the same fact.
     git_url = getattr(conanfile, "_git_url", None)
     return git_url if isinstance(git_url, str) else ""
 
 
-def _declared(node, spec, key, default=None):
-    """What the recipe says about its own packaging, wherever it still says it.
-
-    A recipe declares these as class attributes, which arrive on the conanfile instance.
-    The catalog entry is consulted only for the recipes not yet converted.
-    """
-    value = getattr(node.conanfile, key, None)
-    if value is not None:
-        return value
-    return spec.get(key, default)
-
-
-def _engine_targets(node, spec, bundles):
-    """The names the engine will pass to find_package for this package.
-
-    That is exactly what cmake_file_name means, so a recipe declares its engine target by
-    setting it and nothing is repeated anywhere else.
-
-    A package that carries another and answers to its name too says so with
-    bundle_targets, naming which of its bundled packages stay visible. Only OpenEXR does:
-    it ships Imath, and the engine has always registered both names. The rest of a
-    package's bundles are implementation detail and deliberately do not appear.
-    """
-    targets = []
-    primary = node.conanfile.cpp_info.get_property("cmake_file_name")
-    if primary:
-        targets.append(primary)
-
-    public = _declared(node, spec, "bundle_targets") or []
-    for bundled in bundles:
-        if str(bundled.ref.name) not in public:
-            continue
-        extra = bundled.conanfile.cpp_info.get_property("cmake_file_name")
-        if extra and extra not in targets:
-            targets.append(extra)
-
-    if not targets:
-        raise RuntimeError(
-            f"{node.ref.name} does not set cmake_file_name in package_info, so there is "
-            f"no name for the engine to call find_package with"
-        )
-    return targets
-
-
-def _build_package(node, spec, platform, staging_root, output_folder, bundles, os_name):
+def _build_package(node, platform, staging_root, output_folder,
+                   os_name, packaged_names):
     conanfile = node.conanfile
     name = str(node.ref.name)
     version = str(node.ref.version)
-    package_name = f"{name}-{version}-rev{_declared(node, spec, 'rev', 1)}-{platform}"
-    payload = _declared(node, spec, "payload") or name
+    payload = name
 
-    stage = os.path.join(staging_root, package_name)
-    if os.path.isdir(stage):
-        shutil.rmtree(stage)
+    stage = os.path.join(staging_root, name)
     os.makedirs(stage)
-
-    payload_root = stage if payload == "." else os.path.join(stage, payload)
-    _copy_payload(conanfile.package_folder, payload_root)
-    for bundled in bundles:
-        _copy_payload(bundled.conanfile.package_folder, payload_root)
+    _copy_payload(conanfile.package_folder, os.path.join(stage, payload))
 
     curated = _copy_curated_cmake(name, stage)
+    target = _engine_target(name, conanfile.cpp_info)
+    dependencies = _dependencies(node, packaged_names)
+    aliases = _engine_aliases(conanfile.cpp_info, target)
 
-    targets = _engine_targets(node, spec, bundles)
     config_name = f"{name}-config.cmake"
-    if config_name not in curated:
-        usage_map = usage_per_target(targets, [node] + bundles, payload, os_name)
+    curated_config = config_name in curated
+    if not curated_config:
+        usage = _collect_usage(node, payload, os_name)
+        _write(os.path.join(stage, config_name),
+               _generate_config(name, version, target, usage, aliases, dependencies))
 
-        # Recipes describe where their headers are; the engine sometimes includes them
-        # from somewhere else. poly2tri installs poly2tri/poly2tri.h and engine code asks
-        # for <poly2tri.h>, so the directory holding the header goes on the search path
-        # as well. Paths are relative to the payload, as they appear in the package.
-        for extra in _declared(node, spec, "includedirs") or []:
-            for usage in usage_map.values():
-                usage["includedirs"] = _unique(
-                    usage["includedirs"] + [_payload_relative(extra, payload)]
-                )
-
-        # Definitions the engine expects a package to carry that its recipe knows nothing
-        # about: HAVE_BENCHMARK is O3DE's own switch for the benchmark code in its tests,
-        # and the package is what has always turned it on.
-        extra_defines = _declared(node, spec, "defines") or []
-        if extra_defines:
-            for usage in usage_map.values():
-                usage["defines"] = _unique(usage["defines"] + list(extra_defines))
-        config = _generate_config(name, version, targets, usage_map,
-                                  _declared(node, spec, "aliases"))
-        with open(os.path.join(stage, config_name), "w", encoding="utf8") as handle:
-            handle.write(config)
-
-    for target in targets:
-        shim_name = f"Find{target}.cmake"
-        if shim_name in curated:
-            continue
-        with open(os.path.join(stage, shim_name), "w", encoding="utf8") as handle:
-            handle.write(_generate_find_shim(name, target))
+    shim_name = f"Find{target}.cmake"
+    if shim_name not in curated:
+        _write(os.path.join(stage, shim_name),
+               _generate_find_shim(name, target, dependencies, curated_config))
 
     license_file = _license_path(stage, payload)
     if not license_file:
-        raise RuntimeError(f"{package_name}: no license file found in the package payload")
+        raise RuntimeError(f"{name}/{version}: no license file found in its Conan package")
 
     license_name = conanfile.license
     if isinstance(license_name, (list, tuple)):
         license_name = " AND ".join(str(item) for item in license_name)
-
     descriptor = {
-        "PackageName": package_name,
         "URL": conanfile.homepage or conanfile.url or _source_url(conanfile),
         "License": str(license_name or "custom"),
         "LicenseFile": license_file,
     }
+
+    revision = _deployment_revision(node, stage, descriptor)
+    package_name = f"{name}-{version}-{platform}-{revision}"
+    descriptor = {"PackageName": package_name, **descriptor}
     descriptor_path = os.path.join(stage, DESCRIPTOR_NAME)
-    with open(descriptor_path, "w", encoding="utf8") as handle:
-        json.dump(descriptor, handle, indent=4)
-        handle.write("\n")
+    _write(descriptor_path, json.dumps(descriptor, indent=4) + "\n")
 
     relpaths = _payload_files(stage)
-    manifest = "".join(f"{_hash_file(os.path.join(stage, rel))} *{rel}\n" for rel in relpaths)
-
+    manifest = "".join(
+        f"{_hash_file(os.path.join(stage, relpath))} *{relpath}\n"
+        for relpath in relpaths
+    )
     archive_path = os.path.join(output_folder, package_name + ARCHIVE_EXT)
     _archive(stage, relpaths, manifest, archive_path)
 
@@ -577,64 +461,57 @@ def _build_package(node, spec, platform, staging_root, output_folder, bundles, o
     _write(os.path.join(output_folder, package_name + HASH_EXT),
            f"{archive_hash} *{package_name + ARCHIVE_EXT}\n")
     _write(os.path.join(output_folder, package_name + CONTENT_HASH_EXT), manifest)
-    shutil.copyfile(descriptor_path, os.path.join(output_folder, f"{package_name}.{DESCRIPTOR_NAME}"))
+    shutil.copyfile(descriptor_path,
+                    os.path.join(output_folder, f"{package_name}.{DESCRIPTOR_NAME}"))
 
     print(f"    {package_name + ARCHIVE_EXT}  {archive_hash}")
     return {
         "package_name": package_name,
         "archive": package_name + ARCHIVE_EXT,
         "sha256": archive_hash,
-        "targets": list(targets),
+        "targets": [target],
         "reference": f"{name}/{version}",
+        "conan_reference": _package_reference(node),
         "platform": platform,
     }
 
 
-def _write(path, text):
+def _write(path, content):
     with open(path, "w", encoding="utf8") as handle:
-        handle.write(text)
+        handle.write(content)
+
+
+def _remove_artifact(output_folder, package_name):
+    for suffix in (ARCHIVE_EXT, HASH_EXT, CONTENT_HASH_EXT, "." + DESCRIPTOR_NAME):
+        path = os.path.join(output_folder, package_name + suffix)
+        if os.path.isfile(path):
+            os.remove(path)
 
 
 # --------------------------------------------------------------------------------------
-# entry point
+# Conan deployer entry point
 # --------------------------------------------------------------------------------------
 
 def deploy(graph, output_folder, **kwargs):
-    nodes = {}
-    for node in graph.nodes:
-        if node is graph.root or node.conanfile.package_folder is None:
-            continue
-        if getattr(node, "context", "host") != "host":
-            continue  # build tools are not shipped
-        nodes[str(node.ref.name)] = node
-
-    # Installing a single package gives a synthetic root that carries no settings, so
-    # fall back to what the packages themselves were built with.
+    nodes = [
+        node for node in graph.nodes
+        if node is not graph.root
+        and node.conanfile.package_folder is not None
+        and getattr(node, "context", "host") == "host"
+        and getattr(node.conanfile, "upload_policy", None) != "skip"
+    ]
     if not nodes:
         print("nothing to package")
         return
 
-    # The caller knows the target; the graph does not always. Installing a single package
-    # gives a synthetic root with no settings, and a header only package can legitimately
-    # have none of its own, so neither is a reliable place to ask.
-    platform = os.environ.get("O3DE_TARGET_PLATFORM")
+    root = graph.root.conanfile
+    platform = root.conf.get("user.o3de:platform", default=None, check_type=str)
     if not platform:
-        for node in nodes.values():
-            if node.conanfile.settings.get_safe("os"):
-                platform = catalog.platform_id(node.conanfile.settings)
-                break
-    if not platform:
-        raise RuntimeError(
-            "set O3DE_TARGET_PLATFORM: the target cannot be inferred from this graph"
-        )
-
-    entries = catalog.packages_for(platform)
-
-    bundled_into_others = {
-        bundled
-        for spec in entries.values()
-        for bundled in spec.get("bundle", [])
-    }
+        raise RuntimeError("the host profile must define user.o3de:platform")
+    os_value = root.settings.get_safe("os") or nodes[0].conanfile.settings.get_safe("os")
+    if os_value is None:
+        raise RuntimeError("the host profile must define a Conan os setting")
+    os_name = str(os_value)
 
     os.makedirs(output_folder, exist_ok=True)
     staging_root = os.path.join(output_folder, ".stage")
@@ -642,60 +519,35 @@ def deploy(graph, output_folder, **kwargs):
         shutil.rmtree(staging_root)
     os.makedirs(staging_root)
 
-    print(f"Building engine packages for {platform}")
-    produced, absent = [], []
-    for name, spec in entries.items():
-        if name in bundled_into_others:
-            continue
-        node = nodes.get(name)
-        if node is None:
-            # Expected when installing a single package; worth reporting otherwise.
-            absent.append(name)
-            continue
-        # A bundle that quietly resolves to nothing produces a package that looks right
-        # and cannot be linked against, days later and somewhere else, so it stops here.
-        wanted = _declared(node, spec, "bundle") or []
-        missing = [b for b in wanted if b not in nodes]
-        if missing:
-            raise RuntimeError(
-                f"{name} bundles {', '.join(missing)}, which the graph does not offer a "
-                f"package folder for. Conan skips the binaries of static dependencies "
-                f"that a shared library has already absorbed; tools.graph:skip_binaries "
-                f"is set to False in profiles/_common to prevent exactly that."
-            )
-        bundles = [nodes[b] for b in wanted]
-        produced.append(_build_package(
-            node, spec, platform, staging_root, output_folder, bundles,
-            catalog.CONAN_OS[platform],
-        ))
+    packaged_names = {str(node.ref.name) for node in nodes}
+    print(f"Building independent engine packages for {platform}")
+    produced = []
+    try:
+        for node in sorted(nodes, key=lambda item: str(item.ref)):
+            produced.append(_build_package(
+                node, platform, staging_root, output_folder,
+                os_name, packaged_names))
+    finally:
+        shutil.rmtree(staging_root, ignore_errors=True)
 
-    if absent:
-        print(f"  not in this graph, so not packaged: {', '.join(sorted(absent))}")
-
-    shutil.rmtree(staging_root, ignore_errors=True)
-
-    # Merged rather than overwritten, so building one package does not drop the record
-    # of everything else already sitting in this folder.
     manifest_path = os.path.join(output_folder, "packages-manifest.json")
-    by_name = {}
+    by_reference = {}
     if os.path.isfile(manifest_path):
         with open(manifest_path, encoding="utf8") as handle:
             existing = json.load(handle)
         if existing.get("platform") == platform:
-            # Entries whose archive is gone are dropped rather than carried forward. A
-            # version bump leaves the old package's record behind otherwise, and the
-            # engine is then pinned to a file that is not there to download.
-            by_name = {
-                entry["package_name"]: entry
+            by_reference = {
+                entry["reference"]: entry
                 for entry in existing.get("packages", [])
-                if os.path.isfile(os.path.join(output_folder,
-                                               entry["package_name"] + ARCHIVE_EXT))
+                if os.path.isfile(os.path.join(output_folder, entry["package_name"] + ARCHIVE_EXT))
             }
-    by_name.update({entry["package_name"]: entry for entry in produced})
 
-    merged = sorted(by_name.values(), key=lambda entry: entry["package_name"].lower())
-    with open(manifest_path, "w", encoding="utf8") as handle:
-        json.dump({"platform": platform, "packages": merged}, handle, indent=2)
-        handle.write("\n")
+    for entry in produced:
+        previous = by_reference.get(entry["reference"])
+        if previous and previous["package_name"] != entry["package_name"]:
+            _remove_artifact(output_folder, previous["package_name"])
+        by_reference[entry["reference"]] = entry
 
+    merged = sorted(by_reference.values(), key=lambda entry: entry["package_name"].lower())
+    _write(manifest_path, json.dumps({"platform": platform, "packages": merged}, indent=2) + "\n")
     print(f"{len(produced)} package(s) written to {output_folder}")

@@ -8,3 +8,6 @@ compiler.version=194
 compiler.cppstd=20
 compiler.runtime=dynamic
 compiler.runtime_type=Release
+
+[conf]
+user.o3de:platform=windows-x64

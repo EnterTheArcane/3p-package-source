@@ -11,11 +11,10 @@ build_type=Release
 tools.cmake.cmaketoolchain:generator=Ninja
 tools.build:skip_test=True
 
-# Conan drops the binaries of static dependencies that a shared library has already
-# absorbed. That is right for building and wrong for us: the deployer reads package
-# folders to assemble a package, and a skipped node has none, so a bundled dependency
-# resolves to nothing and ships as a library the engine then cannot link against.
-# OpenEXR lost openjph this way whenever it was deployed alongside OpenImageIO.
+# Conan can omit a static dependency binary once a shared library has absorbed it. That
+# is right for a conventional consumer, but the deployer emits every host dependency as
+# an independent O3DE package and needs each package folder to exist. OpenEXR otherwise
+# loses the separately published openjph package when resolved with OpenImageIO.
 tools.graph:skip_binaries=False
 
 # openimageio's with_libwebp option does not work. Conan Center's recipe sets
@@ -33,6 +32,6 @@ CMAKE_POLICY_VERSION_MINIMUM=3.5
 # freetype requires zlib-ng rather than zlib and offers no option to choose. Left alone
 # it would put a second compression library into the engine, and one we do not ship, so
 # freetype would link against symbols that never arrive. zlib-ng is API compatible, so
-# point it at the zlib we do ship. Keep this version matching the catalog entry.
+# point it at the zlib we do ship. Keep this version matching recipes/zlib/config.yml.
 [replace_requires]
 zlib-ng/*: zlib/1.3.1
