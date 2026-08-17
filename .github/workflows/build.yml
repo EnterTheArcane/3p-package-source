@@ -120,6 +120,7 @@ jobs:
             exit 1
           fi
 
+          failures=()
           for reference in "${references[@]}"; do
             echo "::group::$reference"
             if graph="$(conan graph info --requires="$reference" \
@@ -130,7 +131,9 @@ jobs:
             else
               graph_status=$?
               echo "$graph" >&2
-              exit "$graph_status"
+              failures+=("$reference (graph exit $graph_status)")
+              echo "::endgroup::"
+              continue
             fi
             if grep -q 'binary: Invalid' <<< "$graph"; then
               echo "$graph"
@@ -139,16 +142,32 @@ jobs:
               continue
             fi
 
-            conan install --requires="$reference" \
-              -pr:h="profiles/${{ matrix.platform }}" \
-              -pr:b="profiles/${{ matrix.build_profile }}" \
-              --update --build=missing \
-              --output-folder="build/${{ matrix.platform }}" \
-              --envs-generation=false \
-              --deployer="extensions/deployers/engine_package.py" \
-              --deployer-folder="packages/${{ matrix.platform }}"
+            if conan install --requires="$reference" \
+                -pr:h="profiles/${{ matrix.platform }}" \
+                -pr:b="profiles/${{ matrix.build_profile }}" \
+                --update --build=missing \
+                --output-folder="build/${{ matrix.platform }}" \
+                --envs-generation=false \
+                --deployer="extensions/deployers/engine_package.py" \
+                --deployer-folder="packages/${{ matrix.platform }}"; then
+              :
+            else
+              install_status=$?
+              failures+=("$reference (build exit $install_status)")
+            fi
             echo "::endgroup::"
           done
+
+          if [ ${#failures[@]} -ne 0 ]; then
+            echo "Failed recipes for ${{ matrix.platform }}:" >&2
+            printf '  - %s\n' "${failures[@]}" >&2
+            {
+              echo "### Failed recipes for ${{ matrix.platform }}"
+              echo
+              printf -- '- `%s`\n' "${failures[@]}"
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
 
       - name: Validate Packages
         run: python3 tools/validate_package.py packages/${{ matrix.platform }}

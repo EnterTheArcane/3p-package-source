@@ -1,4 +1,0 @@
-sources:
-  1.8.22:
-    url: "https://github.com/o3de/o3de-azslc/archive/refs/tags/1.8.22.tar.gz"
-    sha256: "0da0a59b38e549a1baba52d9491d7530d03efdf974c735bf490801844c83e9cf"
