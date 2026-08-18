@@ -2,9 +2,11 @@
 
 ## What a release is
 
-A package is identified by `<name>-<version>-<o3de-platform>-<deployment-sha256>` and is
-immutable once published. Releasing means building packages, publishing them, and
-opening a pull request against the engine that pins the new names and hashes.
+A package is identified by `<name>-<version>-<o3de-platform>-<deployment-id>` and is
+immutable once published. The deployment ID is the first 24 hexadecimal characters
+(96 bits) of the complete deployment SHA-256 recorded in `packages-manifest.json`.
+Releasing means building packages, publishing them, and opening a pull request against
+the engine that pins the new names and full archive hashes.
 
 Nothing is rebuilt between the development and production buckets. The bytes that CI
 validated are the bytes that ship.

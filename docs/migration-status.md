@@ -29,7 +29,8 @@ These are ours for a reason beyond that:
 | `mcpp` | The O3DE fork adds C++ linkage and the include-report callback the shader builder uses. |
 | `azslc` | O3DE's own shader compiler. |
 | `dxc` | O3DE's DXC fork, which carries the `dxsc` tool. |
-| `ispc-texcomp` | No Conan Center recipe; needs the ISPC compiler and a different patch on Apple Silicon. |
+| `ispc` | Caches the official prebuilt compiler as a build-only tool instead of rebuilding its LLVM toolchain; it is not deployed as an engine package. |
+| `ispc-texture-compressor` | No Conan Center recipe; consumes `ispc` as a tool requirement and needs a different patch on Apple Silicon. |
 | `physx` | Ships four configurations side by side, which the engine selects between at consume time. |
 | `nvcloth` | Conan Center builds the 1.1.6 release branch, where the callback interfaces are in `physx`; engine code derives from `nv::cloth::PxAssertHandler`, which only exists on master. Also ships one library per configuration. |
 | `qt` | Conan Center has no 6.10.2 and packages Qt differently from what the engine's FindQt expects. |
@@ -99,8 +100,9 @@ packages such as `libclang`.
 
 The deployer gives every package a payload directory matching its recipe name and derives
 an immutable deployment revision from the resolved Conan binary plus the staged O3DE
-image. There is no release counter, platform catalog, bundle list, or sidecar deployment
-manifest.
+image. Package names use a 96-bit prefix, while the build manifest retains the complete
+deployment digest and the engine pins the complete archive hash. There is no release
+counter, platform catalog, bundle list, or hand-maintained sidecar metadata.
 
 ## What was deleted
 

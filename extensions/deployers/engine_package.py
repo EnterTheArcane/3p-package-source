@@ -10,10 +10,10 @@
 Every host-context node in the Conan graph becomes its own archive. Dependencies are
 never merged: generated Find modules download and resolve the packages they depend on.
 
-The filename suffix is a deployment revision. Like Conan's package revision (PREV), it
-is derived from the binary identity and contents rather than maintained by hand. It also
-includes the generated O3DE files and this deployer, which are outside Conan's package
-folder and therefore outside PREV.
+The filename suffix is the first 96 bits of a deployment revision. Like Conan's package
+revision (PREV), the full digest is derived from the binary identity and contents rather
+than maintained by hand. It also includes the generated O3DE files and this deployer,
+which are outside Conan's package folder and therefore outside PREV.
 """
 
 import hashlib
@@ -32,6 +32,7 @@ HASH_EXT = ".tar.xz.SHA256SUMS"
 CONTENT_HASH_EXT = ".tar.xz.content.SHA256SUMS"
 MANIFEST_NAME = "SHA256SUMS"
 DESCRIPTOR_NAME = "PackageInfo.json"
+DEPLOYMENT_REVISION_HEX_LENGTH = 24
 
 EXCLUDED_FROM_PAYLOAD = ("conaninfo.txt", "conanmanifest.txt")
 _BUFFER = 1024 * 1024 * 10
@@ -443,8 +444,9 @@ def _build_package(node, platform, staging_root, output_folder,
         "LicenseFile": license_file,
     }
 
-    revision = _deployment_revision(node, stage, descriptor)
-    package_name = f"{name}-{version}-{platform}-{revision}"
+    deployment_sha256 = _deployment_revision(node, stage, descriptor)
+    deployment_revision = deployment_sha256[:DEPLOYMENT_REVISION_HEX_LENGTH]
+    package_name = f"{name}-{version}-{platform}-{deployment_revision}"
     descriptor = {"PackageName": package_name, **descriptor}
     descriptor_path = os.path.join(stage, DESCRIPTOR_NAME)
     _write(descriptor_path, json.dumps(descriptor, indent=4) + "\n")
@@ -472,6 +474,7 @@ def _build_package(node, platform, staging_root, output_folder,
         "targets": [target],
         "reference": f"{name}/{version}",
         "conan_reference": _package_reference(node),
+        "deployment_sha256": deployment_sha256,
         "platform": platform,
     }
 

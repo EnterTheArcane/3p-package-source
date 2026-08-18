@@ -1,0 +1,12 @@
+sources:
+  36b80aa:
+    url: "https://github.com/GameTechDev/ISPCTextureCompressor/archive/36b80aac50ea401a9adde44d86712c2241b2acfd.tar.gz"
+    sha256: "029373e6ec5b10d7e29eefdc5a231fb86c79b76a4a39c58c2727c6729de28ab7"
+
+# The Apple Silicon variant also retargets the ISPC kernels to arm64/neon;
+# without it they compile as x86_64 and fail to link.
+patches:
+  36b80aa:
+    common: "patches/ISPCTexComp_36b80aa-limits.patch"
+    default: "patches/ISPCTexComp_36b80aa.patch"
+    Macos-armv8: "patches/ISPCTexComp_36b80aa-mac-arm64.patch"

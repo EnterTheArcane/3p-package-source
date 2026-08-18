@@ -1,0 +1,12 @@
+diff --git a/ispc_texcomp/ispc_texcomp_astc.cpp b/ispc_texcomp/ispc_texcomp_astc.cpp
+index d987729..bd60321 100644
+--- a/ispc_texcomp/ispc_texcomp_astc.cpp
++++ b/ispc_texcomp/ispc_texcomp_astc.cpp
+@@ -16,6 +16,7 @@
+ #include "ispc_texcomp.h"
+ #include "kernel_astc_ispc.h"
+ #include <cassert>
++#include <limits>
+ #include <cstring>
+ #include <algorithm>
+ #include <vector>

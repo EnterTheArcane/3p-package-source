@@ -9,17 +9,20 @@ import os
 import shutil
 
 from conan import ConanFile
-from conan.errors import ConanInvalidConfiguration
+from conan.errors import ConanException, ConanInvalidConfiguration
 from conan.tools.files import copy, get, patch
 
 
-class IspcTexCompConan(ConanFile):
-    name = "ispc-texcomp"
+class IspcTextureCompressorConan(ConanFile):
+    name = "ispc-texture-compressor"
     version = "36b80aa"
     license = "MIT"
     package_type = "shared-library"
 
     settings = "os", "arch", "compiler", "build_type"
+
+    def build_requirements(self):
+        self.tool_requires("ispc/1.31.0")
 
     def export_sources(self):
         # Exported by hand: the patch set is keyed by host rather than following the
@@ -28,13 +31,17 @@ class IspcTexCompConan(ConanFile):
              os.path.join(self.export_sources_folder, "patches"))
 
     def validate(self):
-        ispc = self.conan_data["ispc"][self.version]
-        if str(self.settings.os) not in ispc:
-            raise ConanInvalidConfiguration(f"no ISPC compiler for {self.settings.os}")
-        by_arch = ispc[str(self.settings.os)]
-        if str(self.settings.arch) not in by_arch:
+        supported = {
+            ("Windows", "x86_64"),
+            ("Linux", "x86_64"),
+            ("Macos", "armv8"),
+        }
+        configuration = (str(self.settings.os), str(self.settings.arch))
+        if configuration not in supported:
             raise ConanInvalidConfiguration(
-                f"no ISPC compiler for {self.settings.os}/{self.settings.arch}")
+                f"ispc-texture-compressor is not shipped for "
+                f"{self.settings.os}/{self.settings.arch}"
+            )
 
     def layout(self):
         self.folders.source = "src"
@@ -43,40 +50,35 @@ class IspcTexCompConan(ConanFile):
     def source(self):
         get(self, **self.conan_data["sources"][self.version], strip_root=True)
 
-    def _install_ispc(self):
-        """Put the ISPC compiler where the project's build files expect it.
+    def _stage_ispc(self):
+        """Put the tool requirement where the upstream build files expect it."""
+        executable = "ispc.exe" if self.settings.os == "Windows" else "ispc"
+        directory = {"Windows": "win", "Linux": "linux", "Macos": "osx"}[
+            str(self.settings.os)
+        ]
+        source = os.path.join(
+            self.dependencies.build["ispc"].package_folder, "bin", executable
+        )
+        if not os.path.isfile(source):
+            raise ConanException(f"ispc tool requirement has no {executable}")
 
-        Fetched here rather than in source() because which build it needs depends on the
-        host, and source() runs once for all configurations.
-        """
-        ispc = self.conan_data["ispc"][self.version][str(self.settings.os)][str(self.settings.arch)]
-        destination = os.path.join(self.source_folder, "ISPC", ispc["directory"])
+        destination = os.path.join(self.source_folder, "ISPC", directory)
         os.makedirs(destination, exist_ok=True)
-
-        staging = os.path.join(self.build_folder, "ispc-download")
-        get(self, url=ispc["url"], destination=staging, strip_root=True)
-        for current, _dirs, files in os.walk(staging):
-            for name in files:
-                if name in ("ispc", "ispc.exe"):
-                    target = os.path.join(destination, name)
-                    shutil.copy2(os.path.join(current, name), target)
-                    os.chmod(target, 0o755)
-        shutil.rmtree(staging, ignore_errors=True)
+        target = os.path.join(destination, executable)
+        shutil.copy2(source, target)
+        os.chmod(target, 0o755)
 
     def _apply_patch(self):
-        """Pick the build fixes for this host.
-
-        Apple Silicon needs its own variant: the generic patch leaves the ISPC kernels
-        targeting x86_64, which then fail to link into an arm64 library.
-        """
+        """Pick the build fixes for this target."""
         patches = self.conan_data["patches"][self.version]
+        patch(self, patch_file=os.path.join(self.export_sources_folder, patches["common"]))
         key = f"{self.settings.os}-{self.settings.arch}"
         patch_file = patches.get(key, patches["default"])
         patch(self, patch_file=os.path.join(self.export_sources_folder, patch_file))
 
     def build(self):
         self._apply_patch()
-        self._install_ispc()
+        self._stage_ispc()
 
         if self.settings.os == "Macos":
             architecture = "arm64" if str(self.settings.arch) == "armv8" else "x86_64"
@@ -113,6 +115,8 @@ class IspcTexCompConan(ConanFile):
              os.path.join(self.package_folder, "licenses"))
 
     def package_info(self):
+        # Preserve the engine-facing target while changing the Conan reference and
+        # deployment payload name.
         self.cpp_info.set_property("cmake_file_name", "ISPCTexComp")
         self.cpp_info.bindirs = ["bin"]
         self.cpp_info.libdirs = ["bin"]

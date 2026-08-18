@@ -11,8 +11,8 @@ if (TARGET ${TARGET_WITH_NAMESPACE})
     return()
 endif()
 
-set(${LIB_NAME}_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/ispc-texcomp/include)
-set(${LIB_NAME}_BINARY_DIR ${CMAKE_CURRENT_LIST_DIR}/ispc-texcomp/bin)
+set(${LIB_NAME}_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/ispc-texture-compressor/include)
+set(${LIB_NAME}_BINARY_DIR ${CMAKE_CURRENT_LIST_DIR}/ispc-texture-compressor/bin)
 
 # Windows links an import library; elsewhere the shared library is linked directly.
 if (WIN32)

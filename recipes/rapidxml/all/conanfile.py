@@ -14,9 +14,6 @@ from conan.tools.files import copy
 class RapidXmlConan(ConanFile):
     name = "rapidxml"
     version = "1.13"
-    # Kept, like glad's: these headers are vendored rather than downloaded, so there is
-    # no source archive for the descriptor's URL to point at.
-    homepage = "https://rapidxml.sourceforge.net"
     license = "BSL-1.0 OR MIT"
     package_type = "header-library"
     no_copy_source = True

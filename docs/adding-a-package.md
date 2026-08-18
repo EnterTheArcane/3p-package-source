@@ -80,4 +80,6 @@ of the same name.
 Do not bump a release counter. The deployer derives a SHA-256 deployment revision from
 the resolved Conan binary and the complete O3DE package image. A change to the recipe,
 binary, CMake integration, descriptor, or deployer produces a new package name while the
-upstream version can remain unchanged.
+upstream version can remain unchanged. Package filenames use a 96-bit prefix of that
+revision; `packages-manifest.json` retains the complete digest, and engine package pins
+retain the complete archive SHA-256.

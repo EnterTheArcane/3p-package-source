@@ -68,13 +68,17 @@ Conan identifies a binary with its recipe revision, package ID, and package revi
 O3DE archives follow the same content-addressed idea:
 
 ```text
-<name>-<version>-<o3de-platform>-<deployment-sha256>
+<name>-<version>-<o3de-platform>-<deployment-id>
 ```
 
 The deployment digest includes the complete Conan binary reference, packaged payload,
 generated or curated CMake files, descriptor metadata, file modes and the deployer. A
 recipe can keep the same semantic version while a changed build receives a new CDN-safe
-name automatically. There is no manually maintained `rev` field.
+name automatically. The filename uses the first 24 hexadecimal characters (96 bits) of
+the digest; the complete SHA-256 remains in `packages-manifest.json`, while the engine
+separately pins and verifies the complete SHA-256 of the archive. At one million distinct
+artifacts, the probability of an accidental 96-bit prefix collision is approximately
+6e-18. There is no manually maintained `rev` field.
 
 ## Repository layout
 
