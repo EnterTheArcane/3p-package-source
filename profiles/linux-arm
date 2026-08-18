@@ -1,5 +1,4 @@
-# Cross-compiled from an x64 Linux host.
-# Requires the aarch64 sysroot (crossbuild-essential-arm64) on the build machine.
+# Built natively on GitHub's Ubuntu ARM64 runner.
 
 include(_common)
 
@@ -17,7 +16,3 @@ compiler.libcxx=libstdc++11
 [conf]
 user.o3de:platform=linux-arm
 tools.build:compiler_executables={"c": "clang-18", "cpp": "clang++-18"}
-tools.build:cflags=["--target=aarch64-linux-gnu"]
-tools.build:cxxflags=["--target=aarch64-linux-gnu"]
-tools.build:exelinkflags=["--target=aarch64-linux-gnu"]
-tools.build:sharedlinkflags=["--target=aarch64-linux-gnu"]

@@ -438,11 +438,13 @@ def _build_package(node, platform, staging_root, output_folder,
     license_name = conanfile.license
     if isinstance(license_name, (list, tuple)):
         license_name = " AND ".join(str(item) for item in license_name)
+    source_url = conanfile.homepage or conanfile.url or _source_url(conanfile)
     descriptor = {
-        "URL": conanfile.homepage or conanfile.url or _source_url(conanfile),
         "License": str(license_name or "custom"),
         "LicenseFile": license_file,
     }
+    if source_url:
+        descriptor["URL"] = source_url
 
     deployment_sha256 = _deployment_revision(node, stage, descriptor)
     deployment_revision = deployment_sha256[:DEPLOYMENT_REVISION_HEX_LENGTH]

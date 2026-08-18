@@ -16,7 +16,7 @@ from conan.tools.layout import basic_layout
 
 class McppConan(ConanFile):
     name = "mcpp"
-    version = "2.7.2_az.2"
+    version = "2.7.2"
     license = "BSD-2-Clause"
     package_type = "static-library"
 
@@ -39,8 +39,7 @@ class McppConan(ConanFile):
         basic_layout(self, src_folder="src")
 
     def source(self):
-        # The version here carries the fork suffix; the tarball does not.
-        get(self, **self.conan_data["sources"]["2.7.2"], strip_root=True)
+        get(self, **self.conan_data["sources"][self.version], strip_root=True)
 
     def generate(self):
         toolchain = AutotoolsToolchain(self)

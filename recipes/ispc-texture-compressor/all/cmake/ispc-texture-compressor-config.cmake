@@ -13,17 +13,17 @@ endif()
 
 set(${LIB_NAME}_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/ispc-texture-compressor/include)
 set(${LIB_NAME}_BINARY_DIR ${CMAKE_CURRENT_LIST_DIR}/ispc-texture-compressor/bin)
+set(${LIB_NAME}_LIBRARY_DIR ${CMAKE_CURRENT_LIST_DIR}/ispc-texture-compressor/lib)
 
 # Windows links an import library; elsewhere the shared library is linked directly.
 if (WIN32)
-    set(${LIB_NAME}_LIBRARY ${${LIB_NAME}_BINARY_DIR}/ispc_texcomp.lib)
+    set(${LIB_NAME}_LIBRARY ${${LIB_NAME}_LIBRARY_DIR}/ispc_texcomp.lib)
+    set(${LIB_NAME}_RUNTIME_DEPENDENCIES ${${LIB_NAME}_BINARY_DIR}/ispc_texcomp.dll)
 else()
     set(${LIB_NAME}_LIBRARY
-        ${${LIB_NAME}_BINARY_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}ispc_texcomp${CMAKE_SHARED_LIBRARY_SUFFIX})
+        ${${LIB_NAME}_LIBRARY_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}ispc_texcomp${CMAKE_SHARED_LIBRARY_SUFFIX})
+    set(${LIB_NAME}_RUNTIME_DEPENDENCIES ${${LIB_NAME}_LIBRARY})
 endif()
-
-set(${LIB_NAME}_RUNTIME_DEPENDENCIES
-    ${${LIB_NAME}_BINARY_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}ispc_texcomp${CMAKE_SHARED_LIBRARY_SUFFIX})
 
 add_library(${TARGET_WITH_NAMESPACE} INTERFACE IMPORTED GLOBAL)
 

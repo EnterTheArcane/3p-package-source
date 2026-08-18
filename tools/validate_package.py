@@ -31,7 +31,10 @@ HASH_EXT = ".tar.xz.SHA256SUMS"
 CONTENT_HASH_EXT = ".tar.xz.content.SHA256SUMS"
 MANIFEST_NAME = "SHA256SUMS"
 DESCRIPTOR_NAME = "PackageInfo.json"
-REQUIRED_FIELDS = ("PackageName", "URL", "License", "LicenseFile")
+# O3DE only requires PackageInfo.json itself for package activation, while the
+# license scanner consumes LicenseFile.  URL is useful provenance when a recipe
+# provides it, but it is not part of the engine's package contract.
+REQUIRED_FIELDS = ("PackageName", "License", "LicenseFile")
 
 
 # Load paths that resolve relative to the package or against the OS itself, which is

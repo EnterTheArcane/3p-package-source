@@ -1,0 +1,73 @@
+diff --git a/cmake/modules/CrossCompile.cmake b/cmake/modules/CrossCompile.cmake
+--- a/cmake/modules/CrossCompile.cmake
++++ b/cmake/modules/CrossCompile.cmake
+@@ -1,5 +1,10 @@
+ function(llvm_create_cross_target_internal target_name toochain buildtype)
+ 
++  set(native_cmake "${CMAKE_COMMAND}")
++  if(DEFINED ENV{LLVM_NATIVE_CMAKE})
++    set(native_cmake "$ENV{LLVM_NATIVE_CMAKE}")
++  endif()
++
+   if(NOT DEFINED LLVM_${target_name}_BUILD)
+     set(LLVM_${target_name}_BUILD "${CMAKE_BINARY_DIR}/${target_name}")
+     set(LLVM_${target_name}_BUILD ${LLVM_${target_name}_BUILD} PARENT_SCOPE)
+@@ -16,8 +21,8 @@ function(llvm_create_cross_target_internal target_name toochain buildtype)
+     COMMENT "Creating ${LLVM_${target_name}_BUILD}...")
+ 
+   add_custom_command(OUTPUT ${LLVM_${target_name}_BUILD}/CMakeCache.txt
+-    COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}"
+-        ${CROSS_TOOLCHAIN_FLAGS_${target_name}} ${CMAKE_SOURCE_DIR}
++    COMMAND ${native_cmake} -G "${CMAKE_GENERATOR}"
++        ${CROSS_TOOLCHAIN_FLAGS_${target_name}} "${CMAKE_SOURCE_DIR}"
+     WORKING_DIRECTORY ${LLVM_${target_name}_BUILD}
+     DEPENDS ${LLVM_${target_name}_BUILD}
+     COMMENT "Configuring ${target_name} LLVM...")
+@@ -40,9 +45,9 @@ function(llvm_create_cross_target_internal target_name toochain buildtype)
+     if (buildtype)
+       set(build_type_flags "-DCMAKE_BUILD_TYPE=${buildtype}")
+     endif()
+-    execute_process(COMMAND ${CMAKE_COMMAND} ${build_type_flags}
++    execute_process(COMMAND ${native_cmake} ${build_type_flags}
+         -G "${CMAKE_GENERATOR}" -DLLVM_TARGETS_TO_BUILD=${LLVM_TARGETS_TO_BUILD}
+-        ${CROSS_TOOLCHAIN_FLAGS_${target_name}} ${CMAKE_SOURCE_DIR}
++        ${CROSS_TOOLCHAIN_FLAGS_${target_name}} "${CMAKE_SOURCE_DIR}"
+       WORKING_DIRECTORY ${LLVM_${target_name}_BUILD} )
+   endif(NOT IS_DIRECTORY ${LLVM_${target_name}_BUILD})
+ 
+diff --git a/cmake/modules/TableGen.cmake b/cmake/modules/TableGen.cmake
+--- a/cmake/modules/TableGen.cmake
++++ b/cmake/modules/TableGen.cmake
+@@ -100,9 +100,13 @@ function(add_tablegen target project)
+         set(${project}_TABLEGEN_EXE "${LLVM_NATIVE_BUILD}/Release/bin/${target}")
+       endif()
+       set(${project}_TABLEGEN_EXE ${${project}_TABLEGEN_EXE} PARENT_SCOPE)
++      set(native_cmake "${CMAKE_COMMAND}")
++      if(DEFINED ENV{LLVM_NATIVE_CMAKE})
++        set(native_cmake "$ENV{LLVM_NATIVE_CMAKE}")
++      endif()
+ 
+       add_custom_command(OUTPUT ${${project}_TABLEGEN_EXE}
+-        COMMAND ${CMAKE_COMMAND} --build . --target ${target} --config Release
++        COMMAND ${native_cmake} --build . --target ${target} --config Release
+         DEPENDS CONFIGURE_LLVM_NATIVE ${target}
+         WORKING_DIRECTORY ${LLVM_NATIVE_BUILD}
+         COMMENT "Building native TableGen...")
+diff --git a/tools/llvm-config/CMakeLists.txt b/tools/llvm-config/CMakeLists.txt
+--- a/tools/llvm-config/CMakeLists.txt
++++ b/tools/llvm-config/CMakeLists.txt
+@@ -40,9 +40,13 @@ add_file_dependencies(${CMAKE_CURRENT_SOURCE_DIR}/llvm-config.cpp ${BUILDVARIABLES
+ if(CMAKE_CROSSCOMPILING)
+   set(${project}_LLVM_CONFIG_EXE "${LLVM_NATIVE_BUILD}/bin/llvm-config")
+   set(${project}_LLVM_CONFIG_EXE ${${project}_LLVM_CONFIG_EXE} PARENT_SCOPE)
++  set(native_cmake "${CMAKE_COMMAND}")
++  if(DEFINED ENV{LLVM_NATIVE_CMAKE})
++    set(native_cmake "$ENV{LLVM_NATIVE_CMAKE}")
++  endif()
+ 
+   add_custom_command(OUTPUT "${${project}_LLVM_CONFIG_EXE}"
+-    COMMAND ${CMAKE_COMMAND} --build . --target llvm-config --config $<CONFIGURATION>
++    COMMAND ${native_cmake} --build . --target llvm-config --config $<CONFIGURATION>
+     DEPENDS ${LLVM_NATIVE_BUILD}/CMakeCache.txt
+     WORKING_DIRECTORY ${LLVM_NATIVE_BUILD}
+     COMMENT "Building native llvm-config...")

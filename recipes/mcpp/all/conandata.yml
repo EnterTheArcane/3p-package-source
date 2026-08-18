@@ -6,9 +6,7 @@ sources:
     filename: "mcpp-2.7.2.tar.gz"
 
 patches:
-  # Keyed by the recipe version, which carries the fork suffix, or the patch is
-  # silently skipped and the package builds as stock mcpp.
-  2.7.2_az.2:
+  2.7.2:
     - patch_file: "patches/mcpp_2.7.2_az.patch"
       patch_description: "O3DE fork: C++ linkage, renamed macros, and an include-report callback"
       patch_type: "conan"

@@ -17,13 +17,19 @@ build. The deleted tree remains in git history if a platform needs it as referen
 
 The checkout is a local recipes index. Its recipes override Conan Center by reference;
 requirements not present here fall through to Conan Center. Most local recipes were
-adapted from Conan Center while keeping their upstream build logic.
-These are ours for a reason beyond that:
+adapted from Conan Center while keeping their upstream build logic. A later audit of the
+remaining legacy transcriptions found usable Conan Center bases for `rapidjson`, `lua`,
+and `xxhash`; those recipes now follow Conan Center's build and packaging logic too.
+
+The local deltas and purpose-built recipes are:
 
 | Package | Why it needs a recipe |
 | --- | --- |
-| `lua` | Engine code includes `<Lua/lualib.h>`, and the sources are patched to compile out `os.execute` and friends on iOS and Android. Stock Lua does not build for iOS at all. |
-| `xxhash` | Engine code includes `<xxhash/xxhash.h>`; Conan Center installs the header flat. |
+| `lua` | Conan Center-derived. Also installs headers under `Lua/`, as required by engine includes, and patches unsupported OS functions on iOS and Android. |
+| `xxhash` | Conan Center-derived. Also installs compatibility headers under `xxhash/`, while retaining Conan Center's flat include layout and compiled library. |
+| `rapidxml` | O3DE's headers are an Amazon fork in the `AZ::rapidxml` namespace, use AzCore allocators and assertions, and have a different public layout from stock RapidXML. Conan Center's same-named package is not source-compatible. |
+| `astc-encoder` | This is ARM's ASTC encoder. Conan Center's similarly named `astc-codec` is Google's separate decoder library, not an alternate recipe for the same source. |
+| `squish-ccr` | This is Ethatron's CCR 2.0 fork with a different source tree, build contract, and engine include layout. Conan Center's `libsquish` packages the stock 1.15 implementation. |
 | `mikktspace` | Engine code includes `<mikkelsen/mikktspace.h>`, after the author; Conan Center installs the header flat. |
 | `glad` | Pre-generated loaders. Regenerating would change the exported symbol set. |
 | `mcpp` | The O3DE fork adds C++ linkage and the include-report callback the shader builder uses. |
@@ -31,10 +37,10 @@ These are ours for a reason beyond that:
 | `dxc` | O3DE's DXC fork, which carries the `dxsc` tool. |
 | `ispc` | Caches the official prebuilt compiler as a build-only tool instead of rebuilding its LLVM toolchain; it is not deployed as an engine package. |
 | `ispc-texture-compressor` | No Conan Center recipe; consumes `ispc` as a tool requirement and needs a different patch on Apple Silicon. |
-| `physx` | Ships four configurations side by side, which the engine selects between at consume time. |
+| `physx` | Conan Center only has PhysX 4.1.x; this is PhysX 5.1.1 and ships four configurations side by side, which the engine selects between at consume time. |
 | `nvcloth` | Conan Center builds the 1.1.6 release branch, where the callback interfaces are in `physx`; engine code derives from `nv::cloth::PxAssertHandler`, which only exists on master. Also ships one library per configuration. |
-| `qt` | Conan Center has no 6.10.2 and packages Qt differently from what the engine's FindQt expects. |
-| `python` | A relocatable framework build, not a normal Python. |
+| `qt` | Conan Center-derived at 6.10.2, with standalone-sdk options and O3DE's deployment layout layered on top. Native Qt CMake metadata is retained. |
+| `python` | Produces a relocatable `Python.framework` consumed by the local PySide recipe. Conan Center's `cpython` recipe produces a conventional Python layout and is not a compatible base. |
 | `pyside` | Conan Center has no PySide recipe at all. |
 | `libclang` | A build tool, never shipped: the libclang build the Qt project uses, replacing `brew install llvm@20`. Plain LLVM release binaries do not work; see the gotcha below. |
 

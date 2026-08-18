@@ -45,7 +45,8 @@ class SquishCcrConan(ConanFile):
         toolchain = CMakeToolchain(self)
         toolchain.cache_variables["CMAKE_BUILD_TYPE"] = "Release"
         toolchain.cache_variables["BUILD_SHARED_LIBS"] = True
-        toolchain.extra_cxxflags.append("-Wno-shorten-64-to-32")
+        if self.settings.compiler != "msvc":
+            toolchain.extra_cxxflags.append("-Wno-shorten-64-to-32")
         # The CMakeLists picks its SIMD path from CMAKE_SYSTEM_PROCESSOR, which CMake
         # only fills in when cross building. Without it a native ARM build takes the x86
         # branch and fails on <xmmintrin.h>.

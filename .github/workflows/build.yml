@@ -73,19 +73,21 @@ jobs:
           conan remote add o3de "$GITHUB_WORKSPACE"
           --type=local-recipes-index --index=0 --force --allowed-packages="*"
 
-      # Qt needs X11 headers and the ARM64 target needs a sysroot. Everything else,
-      # including the Android NDK and the Emscripten toolchain, comes from Conan.
+      # Qt needs X11 headers. Everything else, including the Android NDK and the
+      # Emscripten toolchain, comes from Conan.
       - name: Install Prerequisites
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            clang-18 lld-18 \
+            clang-18 lld-18 libfontconfig1-dev libfreetype-dev libgtk-3-dev \
             libgl1-mesa-dev libxkbcommon-dev libxkbcommon-x11-dev libx11-dev \
-            libxext-dev libxrender-dev libxrandr-dev libxinerama-dev libxi-dev libxkbfile-dev
-          if [ "${{ matrix.platform }}" = "linux-arm" ]; then
-            sudo apt-get install -y --no-install-recommends crossbuild-essential-arm64
-          fi
+            libx11-xcb-dev libxcb1-dev libxcb-cursor-dev libxcb-glx0-dev \
+            libxcb-icccm4-dev libxcb-image0-dev libxcb-keysyms1-dev \
+            libxcb-randr0-dev libxcb-render-util0-dev libxcb-shape0-dev \
+            libxcb-shm0-dev libxcb-sync-dev libxcb-util-dev libxcb-xfixes0-dev \
+            libxcb-xinerama0-dev libxcb-xkb-dev libxext-dev libxfixes-dev \
+            libxrender-dev libxrandr-dev libxinerama-dev libxi-dev libxkbfile-dev
 
       - name: Free Disk Space
         if: runner.os == 'Linux'

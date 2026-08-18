@@ -65,6 +65,7 @@ class OpenImageIOConan(ConanFile):
         'with_dicom': False,
         'with_ffmpeg': False,
         'with_giflib': True,
+        'giflib/*:utils': False,
         'with_libheif': False,
         'with_raw': False,
         'with_openjpeg': False,

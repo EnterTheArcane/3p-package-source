@@ -3,3 +3,6 @@ patches:
     - patch_file: "patches/no-std-trait-specialization.patch"
       patch_description: "Drop the illegal std::is_nothrow_constructible specialisation in StringRef"
       patch_type: "portability"
+    - patch_file: "patches/native-tablegen-cross-build.patch"
+      patch_description: "Build TableGen and llvm-config with the native compiler when cross-building"
+      patch_type: "portability"

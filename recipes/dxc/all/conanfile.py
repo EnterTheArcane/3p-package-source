@@ -10,7 +10,8 @@ import os
 from conan import ConanFile
 from conan.errors import ConanInvalidConfiguration
 from conan.tools.cmake import CMake, CMakeToolchain, cmake_layout
-from conan.tools.files import apply_conandata_patches, copy, export_conandata_patches
+from conan.tools.env import Environment
+from conan.tools.files import apply_conandata_patches, copy, export_conandata_patches, save
 from conan.tools.scm import Git
 
 
@@ -79,7 +80,26 @@ class DxcConan(ConanFile):
         apply_conandata_patches(self)
         cmake = CMake(self)
         cache = os.path.join(self.source_folder, "cmake", "caches", "PredefinedParams.cmake")
-        cmake.configure(cli_args=[f"-C{cache}"])
+        environment = Environment()
+        if (
+            self.settings.os == "Windows"
+            and self.settings.arch != self.settings_build.arch
+        ):
+            # LLVM's nested NATIVE build must run on the build machine. The outer
+            # Conan environment deliberately selects the ARM64 MSVC tools, so give
+            # that nested CMake invocation a wrapper which switches back to x64.
+            wrapper = os.path.join(self.build_folder, "llvm-native-cmake.bat")
+            save(
+                self,
+                wrapper,
+                "@echo off\n"
+                "call \"%VSINSTALLDIR%VC\\Auxiliary\\Build\\vcvarsall.bat\" x64 >nul\n"
+                "cmake.exe %*\n",
+            )
+            environment.define("LLVM_NATIVE_CMAKE", wrapper)
+
+        with environment.vars(self).apply():
+            cmake.configure(cli_args=[f"-C{cache}"])
         cmake.build()
 
     def package(self):

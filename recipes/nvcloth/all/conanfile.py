@@ -10,6 +10,7 @@ import shutil
 
 from conan import ConanFile
 from conan.errors import ConanInvalidConfiguration
+from conan.tools.env import Environment
 from conan.tools.files import apply_conandata_patches, copy, export_conandata_patches, get
 
 
@@ -58,7 +59,8 @@ class NvClothConan(ConanFile):
 
         # NvCloth's cmake resolves PxShared and its own source through this, the way the
         # previous build's scripts set it.
-        environment = {"GW_DEPS_ROOT": self.source_folder}
+        environment = Environment()
+        environment.define("GW_DEPS_ROOT", self.source_folder)
 
         target = self._platforms[str(self.settings.os)]
         for configuration in self._configurations:
@@ -78,9 +80,12 @@ class NvClothConan(ConanFile):
                 f'-DPX_OUTPUT_DLL_DIR="{build_dir}"',
                 f'-DPX_OUTPUT_EXE_DIR="{build_dir}"',
             ]
-            with_env = " ".join(f"{k}={v}" for k, v in environment.items())
-            self.run(f'{with_env} cmake "{self._compiler_dir}" {" ".join(options)}')
-            self.run(f'{with_env} cmake --build "{build_dir}"')
+            # Apply the variable to the child process instead of prefixing the command.
+            # `NAME=value command` is POSIX syntax and is interpreted as an executable
+            # name by cmd.exe.
+            with environment.vars(self).apply():
+                self.run(f'cmake "{self._compiler_dir}" {" ".join(options)}')
+                self.run(f'cmake --build "{build_dir}"')
 
     @property
     def _forced_include(self):

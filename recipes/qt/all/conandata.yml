@@ -8,3 +8,6 @@ patches:
     - patch_file: "recursion-check.patch"
       patch_description: "Normalise and de-duplicate visited directories when collecting build system targets"
       patch_type: "portability"
+    - patch_file: "patches/6.10.2-fix-macos-26.4.diff"
+      patch_description: "Use Clang's declared ARM yield intrinsic with the macOS 26.4 SDK"
+      patch_type: "portability"

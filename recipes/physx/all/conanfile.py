@@ -43,8 +43,11 @@ class PhysXConan(ConanFile):
     }
 
     def validate(self):
-        if str(self.settings.os) not in ("Windows", "Linux", "Macos"):
-            raise ConanInvalidConfiguration(f"physx is not shipped for {self.settings.os}")
+        key = (str(self.settings.os), str(self.settings.arch))
+        if key not in self._presets:
+            raise ConanInvalidConfiguration(
+                f"physx is not shipped for {self.settings.os}/{self.settings.arch}"
+            )
 
     def export_sources(self):
         export_conandata_patches(self)
@@ -83,23 +86,69 @@ class PhysXConan(ConanFile):
             if os.path.isfile(path):
                 replace_in_file(self, path, "-gdwarf-2", additions, strict=False)
 
+    def _prepare_preset(self):
+        """Keep the generated SDK limited to the static libraries O3DE consumes."""
+        preset, _ = self._preset
+        path = os.path.join(
+            self.source_folder, "physx", "buildtools", "presets", "public",
+            f"{preset}.xml",
+        )
+        replace_in_file(
+            self, path,
+            'name="PX_BUILDSNIPPETS" value="True"',
+            'name="PX_BUILDSNIPPETS" value="False"',
+            strict=False,
+        )
+        replace_in_file(
+            self, path,
+            'name="PX_BUILDPVDRUNTIME" value="True"',
+            'name="PX_BUILDPVDRUNTIME" value="False"',
+            strict=False,
+        )
+        replace_in_file(
+            self, path,
+            'name="PX_GENERATE_STATIC_LIBRARIES" value="False"',
+            'name="PX_GENERATE_STATIC_LIBRARIES" value="True"',
+            strict=False,
+        )
+        if self.settings.os == "Windows":
+            # Match O3DE's dynamic MSVC runtime profile for every library flavor.
+            replace_in_file(
+                self, path,
+                'name="NV_USE_STATIC_WINCRT" value="True"',
+                'name="NV_USE_STATIC_WINCRT" value="False"',
+                strict=False,
+            )
+            replace_in_file(
+                self, path,
+                'name="NV_USE_DEBUG_WINCRT" value="True"',
+                'name="NV_USE_DEBUG_WINCRT" value="False"',
+                strict=False,
+            )
+
     def build(self):
         apply_conandata_patches(self)
         self._relax_warnings()
+        self._prepare_preset()
 
         physx = os.path.join(self.source_folder, "physx")
         preset, _ = self._preset
 
-        # packman fetches the toolchain bits PhysX expects to find beside the source.
-        packman = os.path.join(physx, "buildtools", "packman",
-                               "packman.cmd" if self.settings.os == "Windows" else "packman")
-        self.run(f'"{packman}" update -y', cwd=physx)
-
+        # generate_projects initializes packman and pulls the pinned dependencies.
+        # Running `packman update` first mutates the vendored launcher and the current
+        # packman release returns to the old Windows batch file as a command named `*`.
         generate = "generate_projects.bat" if self.settings.os == "Windows" else "./generate_projects.sh"
         self.run(f"{generate} {preset}", cwd=physx)
 
         for configuration in self._configurations:
-            build_dir = os.path.join(physx, "compiler", preset)
+            # Linux presets are single-config and generation creates one build tree per
+            # flavor; Visual Studio and Xcode use a single multi-config tree.
+            directory = (
+                f"{preset}-{configuration}"
+                if self.settings.os == "Linux"
+                else preset
+            )
+            build_dir = os.path.join(physx, "compiler", directory)
             self.run(f'cmake --build "{build_dir}" --config {configuration}', cwd=physx)
 
     def package(self):
