@@ -30,9 +30,10 @@ call %VCVARS_PATH% amd64
 REM For OpenSSL support
 set OPENSSL_ROOT=%TEMP_FOLDER%\OpenSSL-1.1.1o-rev1-windows\OpenSSL
 set OPENSSL_INCLUDE=%OPENSSL_ROOT%\include
+set OPENSSL_LIB_DEBUG=%OPENSSL_ROOT%\debug\lib
 set OPENSSL_LIB_RELEASE=%OPENSSL_ROOT%\lib
 set INCLUDE=%OPENSSL_INCLUDE%;%INCLUDE%
-set LIB=%OPENSSL_LIB_RELEASE%;%LIB%
+set LIB=%OPENSSL_LIB_DEBUG%;%OPENSSL_LIB_RELEASE%;%LIB%
 
 REM To prevent max path issues, we go as close as possible to disk root
 cd %TEMP_FOLDER%\..\..\..\..\..
@@ -47,7 +48,7 @@ set _OPTS=-prefix %TARGET_INSTALL_ROOT% ^
     -platform win32-msvc ^
     -nomake examples ^
     -nomake tests ^
-    -release ^
+    -debug-and-release ^
     -c++std c++20 ^
     -force-debug-info ^
     -separate-debug-info ^
@@ -74,12 +75,17 @@ set _OPTS=-prefix %TARGET_INSTALL_ROOT% ^
     -no-feature-qtplugininfo ^
     -- ^
     -Wno-dev ^
+    -DQT_USE_DEFAULT_CMAKE_OPTIMIZATION_FLAGS=ON ^
+    -DCMAKE_C_FLAGS_DEBUG="/MDd /O2 /Zi" ^
+    -DCMAKE_CXX_FLAGS_DEBUG="/MDd /O2 /Zi" ^
     -DCMAKE_INSTALL_MESSAGE=NEVER
 
 cmd /c ""%QT_SOURCE_ROOT%\configure.bat" %_OPTS%" || goto FAILURE
 
-cmd /c cmake --build . --parallel || goto FAILURE
+cmd /c cmake --build . --config Debug --parallel || goto FAILURE
+cmd /c cmake --build . --config RelWithDebInfo --parallel || goto FAILURE
 
+cmd /c cmake --install . --config Debug || goto FAILURE
 cmd /c cmake --install . --config RelWithDebInfo || goto FAILURE
 
 :FINISH

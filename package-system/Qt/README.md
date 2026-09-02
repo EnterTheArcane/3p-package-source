@@ -27,7 +27,7 @@ All active targets build `qtbase`, `qtsvg`, `qtimageformats`, `qttools`, and `qt
 
 The package includes the Qt Widgets libraries used by O3DE, UiTools, `moc`, `uic`, `rcc`, `lupdate`, and `lrelease`. The WebP and TIFF image plugins remain enabled. Qt Widgets Designer, JasPer, MNG, SQL, PrintSupport, and selected unused qttools applications are disabled. DBus and Wayland integration are enabled only for Linux.
 
-All active targets build one optimized `RelWithDebInfo` Qt configuration and package its separate debug information. Every O3DE build configuration links to that single Qt configuration; debug-only Qt libraries and `d`-suffixed Windows plugins are not built.
+Linux and macOS build one optimized `RelWithDebInfo` Qt configuration. Windows builds Debug and `RelWithDebInfo` so O3DE Debug uses ABI-compatible `d`-suffixed Qt libraries and plugins, while Profile and Release use the optimized unsuffixed build.
 
 The Linux builds resolve TIFF, zlib, and OpenSSL through the corresponding architecture-specific O3DE dependency packages and force Qt to use them instead of silently selecting bundled or host-system copies.
 

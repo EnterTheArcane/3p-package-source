@@ -9,5 +9,10 @@
 set(QT_LIB_PATH ${QT_PATH}/lib)
 
 function(ly_qt_configuration_mapping in_config out_config)
-    set(${out_config} RELWITHDEBINFO PARENT_SCOPE)
+    string(TOUPPER ${in_config} in_config_upper)
+    if(in_config_upper STREQUAL DEBUG)
+        set(${out_config} DEBUG PARENT_SCOPE)
+    else()
+        set(${out_config} RELEASE PARENT_SCOPE)
+    endif()
 endfunction()
