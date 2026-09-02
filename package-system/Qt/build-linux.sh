@@ -59,7 +59,7 @@ sudo apt-get install -y libfontconfig1-dev \
     libxcb-xinerama0-dev \
     libxrender-dev
 
-BUILD_ROOT="${TEMP_FOLDER}/src/qt-everywhere-src-6.11.2.tar/qt-everywhere-src-6.11.2"
+BUILD_ROOT="${TEMP_FOLDER}/src"
 QTARRAY="qtbase,qtimageformats,qtsvg,qttools,qttranslations,qtwayland"
 
 TIFF_PACKAGE_ROOT="${TEMP_FOLDER}/${TIFF_FOLDER_NAME}"

@@ -15,7 +15,7 @@ MAKE_FLAGS=-j32
 
 # TEMP_FOLDER and TARGET_INSTALL_ROOT get set from the pull_and_build_from_git.py script
 BUILD_PATH=$TEMP_FOLDER/build
-QT_SOURCE_ROOT=$TEMP_FOLDER/src/qt-everywhere-src-6.11.2.tar/qt-everywhere-src-6.11.2
+QT_SOURCE_ROOT=$TEMP_FOLDER/src
 
 QTARRAY="qtbase,qtimageformats,qtsvg,qttranslations,qttools"
 [[ -d $BUILD_PATH ]] || mkdir $BUILD_PATH

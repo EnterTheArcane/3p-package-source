@@ -13,7 +13,7 @@ if not defined VCVARS_PATH set VCVARS_PATH="C:\Program Files\Microsoft Visual St
 if not defined QTARRAY set QTARRAY=qtbase,qtimageformats,qtsvg,qttools,qttranslations
 
 REM TEMP_FOLDER and TARGET_INSTALL_ROOT get set from the pull_and_build_from_git.py script
-set QT_SOURCE_ROOT=%TEMP_FOLDER%\src\qt-everywhere-src-6.11.2.tar\qt-everywhere-src-6.11.2
+set QT_SOURCE_ROOT=%TEMP_FOLDER%\src
 set CHECKS_FAILED=0
 for %%P IN (VCVARS_PATH,TEMP_FOLDER,TARGET_INSTALL_ROOT) do (
     if not exist !%%P! (
@@ -82,8 +82,7 @@ set _OPTS=-prefix %TARGET_INSTALL_ROOT% ^
 
 cmd /c ""%QT_SOURCE_ROOT%\configure.bat" %_OPTS%" || goto FAILURE
 
-cmd /c cmake --build . --config Debug --parallel || goto FAILURE
-cmd /c cmake --build . --config RelWithDebInfo --parallel || goto FAILURE
+cmd /c cmake --build . --parallel || goto FAILURE
 
 cmd /c cmake --install . --config Debug || goto FAILURE
 cmd /c cmake --install . --config RelWithDebInfo || goto FAILURE

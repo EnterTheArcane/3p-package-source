@@ -38,7 +38,6 @@ QtCanvasPainter is not included. Its open-source licensing and dependency on QtD
 When changing build inputs without changing the Qt release, increment the package revision. When changing the upstream Qt release, update:
 
 - `src_package_url`, `src_package_sha1`, and `package_version` in `build_config.json`
-- The archive source paths in the active platform build scripts and `recursion-check.patch`
 - The forced Qt version in `FindQt.cmake`
 - The matching keys in each host package build list
 
