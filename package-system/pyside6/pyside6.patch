@@ -34,6 +34,19 @@ index ba4039e99..3de5b36e7 100644
                  else:
                      log.error("Could not find Qt via provided option "
                                f"--qt-target-path={qt_target_path}\n")
+diff --git a/build_scripts/platforms/windows_desktop.py b/build_scripts/platforms/windows_desktop.py
+index 55b92873a..76ed89551 100644
+--- a/build_scripts/platforms/windows_desktop.py
++++ b/build_scripts/platforms/windows_desktop.py
+@@ -389,6 +389,7 @@ def copy_qt_artifacts(pyside_build, destination_qt_dir, copy_pdbs, _vars):
+             copydir("{install_dir}/plugins/designer",
+                     f"{plugins_target}/designer",
+                     _filter=["*.dll"],
+                     recursive=False,
++                    force=False,
+                     _vars=_vars)
+
+     if copy_translations:
 diff --git a/sources/pyside6/cmake/PySideHelpers.cmake b/sources/pyside6/cmake/PySideHelpers.cmake
 index 9891eab3f..b210c41ab 100644
 --- a/sources/pyside6/cmake/PySideHelpers.cmake

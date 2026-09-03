@@ -40,7 +40,7 @@ LIBCLANG_ROOT="$TEMP_FOLDER/libclang-release_23.1.0-based-linux-Rhel9.6-gcc11.4-
 cp "$LIBCLANG_ROOT/lib/libclang.so.23.1.0" "$PACKAGE_BASE/lib/libclang.so.23.1"
 cp "$LIBCLANG_ROOT/include/llvm/Support/LICENSE.TXT" "$PACKAGE_BASE/LICENSE.LIBCLANG.TXT"
 
-echo Patching the RPATHS of the all site-packages shared libraries to removve absolute paths and set them to $ORIGIN
+echo 'Patching the RPATHS of all site-packages shared libraries to remove absolute paths and set them to $ORIGIN'
 find $PACKAGE_BASE/lib/python3.10/site-packages/PySide6/ -name "*.so*" -exec patchelf --set-rpath '$ORIGIN:$ORIGIN/../shiboken6' {} \;
 
 echo Make the include folder
