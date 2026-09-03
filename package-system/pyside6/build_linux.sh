@@ -58,6 +58,8 @@ echo "Installing build dependencies"
 
 echo Building Pyside6
 
+export CC=clang
+export CXX=clang++
 export LLVM_INSTALL_DIR="$TEMP_FOLDER/libclang-release_23.1.0-based-linux-Rhel9.6-gcc11.4-x86_64/libclang"
 
 cd $TEMP_FOLDER/src
@@ -72,5 +74,4 @@ $TEMP_FOLDER/testenv/bin/python3 setup.py install \
     --skip-modules=Qml,Quick,PrintSupport,Sql,MultimediaWidgets,Pdf,PdfWidgets,Positioning,Location,NetworkAuth,Nfc,WebEngineQuick,Multimedia,QuickControls2,QuickTest,QuickWidgets,UiToolsPrivate,RemoteObjects,Positioning,Scxml,TextToSpeech,3DCore,3DRender,3DInput,3DLogic,3DAnimation,3DExtras,AxContainer
 
 exit $?
-
 
