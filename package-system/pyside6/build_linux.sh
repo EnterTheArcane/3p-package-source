@@ -60,17 +60,16 @@ echo Building Pyside6
 
 cd $TEMP_FOLDER/src
 $TEMP_FOLDER/testenv/bin/python3 setup.py install \
-    --qtpaths=$TEMP_FOLDER/qt-6.10.2-rev6-linux/qt/bin/qtpaths6 \
+    --qtpaths=$TEMP_FOLDER/qt-6.11.2-rev1-linux/qt/bin/qtpaths6 \
     --ignore-git \
     --parallel=8 \
     --build-type=all \
     --skip-docs \
     --log-level=verbose \
     --limited-api=yes \
-    --skip-modules=Quick,MultimediaWidgets,Pdf,PdfWidgets,Positioning,Location,NetworkAuth,Nfc,WebEngineQuick,Multimedia,QuickControls2,QuickTest,QuickWidgets,UiToolsPrivate,RemoteObjects,Positioning,Scxml,TextToSpeech,3DCore,3DRender,3DInput,3DLogic,3DAnimation,3DExtras,AxContainer
+    --skip-modules=Qml,Quick,PrintSupport,Sql,MultimediaWidgets,Pdf,PdfWidgets,Positioning,Location,NetworkAuth,Nfc,WebEngineQuick,Multimedia,QuickControls2,QuickTest,QuickWidgets,UiToolsPrivate,RemoteObjects,Positioning,Scxml,TextToSpeech,3DCore,3DRender,3DInput,3DLogic,3DAnimation,3DExtras,AxContainer
 
 exit $?
-
 
 
 

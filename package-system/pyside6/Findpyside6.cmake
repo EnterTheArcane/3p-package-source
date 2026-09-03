@@ -47,7 +47,6 @@ ly_target_include_system_directories(TARGET ${TARGET_WITH_NAMESPACE}
         ${${MY_NAME}_INCLUDE_DIR}/PySide6/QtNetwork
         ${${MY_NAME}_INCLUDE_DIR}/PySide6/QtOpenGL
         ${${MY_NAME}_INCLUDE_DIR}/PySide6/QtOpenGLWidgets
-        ${${MY_NAME}_INCLUDE_DIR}/PySide6/QtSql
         ${${MY_NAME}_INCLUDE_DIR}/PySide6/QtSvg
         ${${MY_NAME}_INCLUDE_DIR}/PySide6/QtSvgWidgets
         ${${MY_NAME}_INCLUDE_DIR}/PySide6/QtUiTools

@@ -43,19 +43,15 @@ echo Copy the PySide6 headers and libraries
 mkdir -p $PACKAGE_BASE/include/PySide6
 cp -r $INSTALL_SOURCE/PySide6/include/* $PACKAGE_BASE/include/PySide6/
 cp $INSTALL_SOURCE/PySide6/libpyside6.abi3.so $PACKAGE_BASE/lib/
-cp $INSTALL_SOURCE/PySide6/libpyside6.abi3.so.6.10 $PACKAGE_BASE/lib/
-patchelf --set-rpath '$ORIGIN:$ORIGIN/../shiboken6' $PACKAGE_BASE/lib/libpyside6.abi3.so.6.10
-
-cp $INSTALL_SOURCE/PySide6/libpyside6qml.abi3.so $PACKAGE_BASE/lib/
-cp $INSTALL_SOURCE/PySide6/libpyside6qml.abi3.so.6.10 $PACKAGE_BASE/lib/
-patchelf --set-rpath '$ORIGIN:$ORIGIN/../shiboken6' $PACKAGE_BASE/lib/libpyside6qml.abi3.so.6.10
+cp $INSTALL_SOURCE/PySide6/libpyside6.abi3.so.6.11 $PACKAGE_BASE/lib/
+patchelf --set-rpath '$ORIGIN:$ORIGIN/../shiboken6' $PACKAGE_BASE/lib/libpyside6.abi3.so.6.11
 
 echo Copy the shiboken6 headers and libraries
 mkdir -p $PACKAGE_BASE/include/shiboken6
 cp -r $INSTALL_SOURCE/shiboken6/include/* $PACKAGE_BASE/include/shiboken6/
 cp $INSTALL_SOURCE/shiboken6/libshiboken6.abi3.so $PACKAGE_BASE/lib/
-cp $INSTALL_SOURCE/shiboken6/libshiboken6.abi3.so.6.10 $PACKAGE_BASE/lib/
-patchelf --set-rpath '$ORIGIN:$ORIGIN/../shiboken6' $PACKAGE_BASE/lib/libshiboken6.abi3.so.6.10
+cp $INSTALL_SOURCE/shiboken6/libshiboken6.abi3.so.6.11 $PACKAGE_BASE/lib/
+patchelf --set-rpath '$ORIGIN:$ORIGIN/../shiboken6' $PACKAGE_BASE/lib/libshiboken6.abi3.so.6.11
 
 # Add additional files needed for pip install
 cp $TEMP_FOLDER/../__init__.py $PACKAGE_BASE/lib/python3.10/site-packages/

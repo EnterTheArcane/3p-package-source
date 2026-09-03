@@ -60,15 +60,28 @@ index 72d6a1ccf..af767d76c 100644
  
  string(REGEX MATCHALL "[0-9]+" qt_version_helper "${Qt${QT_MAJOR_VERSION}Core_VERSION}")
  
-diff --git a/sources/shiboken6/cmake/ShibokenHelpers.cmake b/sources/shiboken6/cmake/ShibokenHelpers.cmake
-index 0e993fadb..f32b4da8c 100644
---- a/sources/shiboken6/cmake/ShibokenHelpers.cmake
-+++ b/sources/shiboken6/cmake/ShibokenHelpers.cmake
-@@ -191,7 +191,6 @@ macro(setup_clang)
-         list(PREPEND CMAKE_PREFIX_PATH "$ENV{CLANG_INSTALL_DIR}")
-         list(PREPEND CMAKE_FIND_ROOT_PATH "$ENV{CLANG_INSTALL_DIR}")
-     endif()
--
-     find_package(Clang CONFIG REQUIRED)
-     # Need to explicitly handle the version check, because the Clang package doesn't.
-     set(REQUIRED_LLVM "18.0")
+diff --git a/sources/pyside-tools/CMakeLists.txt b/sources/pyside-tools/CMakeLists.txt
+index b8e9152..26746ce 100644
+--- a/sources/pyside-tools/CMakeLists.txt
++++ b/sources/pyside-tools/CMakeLists.txt
+@@ -81,9 +81,13 @@
+     foreach(directory ${directories})
+-        install(DIRECTORY "${directory}"
+-                DESTINATION bin
+-                FILE_PERMISSIONS
+-                OWNER_EXECUTE OWNER_WRITE OWNER_READ
+-                GROUP_EXECUTE GROUP_READ
+-                WORLD_EXECUTE WORLD_READ
+-                PATTERN "android_utilities.py" EXCLUDE) # excluding the symlink
++        if(EXISTS "${directory}")
++            install(DIRECTORY "${directory}"
++                    DESTINATION bin
++                    FILE_PERMISSIONS
++                    OWNER_EXECUTE OWNER_WRITE OWNER_READ
++                    GROUP_EXECUTE GROUP_READ
++                    WORLD_EXECUTE WORLD_READ
++                    PATTERN "android_utilities.py" EXCLUDE) # excluding the symlink
++        else()
++            message(WARNING "${directory} does not exist and will not be installed")
++        endif()
+     endforeach()

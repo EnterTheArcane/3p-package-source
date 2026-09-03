@@ -50,11 +50,9 @@ cp -r $INSTALL_SOURCE/shiboken6/include/* $PACKAGE_BASE/include/shiboken6/
 echo Update duplicates with symlinks for the dylibs
 pushd $PACKAGE_BASE/lib/
 rm libpyside6.abi3.dylib
-ln -s libpyside6.abi3.6.10.dylib libpyside6.abi3.dylib
-rm libpyside6qml.abi3.dylib
-ln -s libpyside6qml.abi3.6.10.dylib libpyside6qml.abi3.dylib
+ln -s libpyside6.abi3.6.11.dylib libpyside6.abi3.dylib
 rm libshiboken6.abi3.dylib
-ln -s libshiboken6.abi3.6.10.dylib libshiboken6.abi3.dylib
+ln -s libshiboken6.abi3.6.11.dylib libshiboken6.abi3.dylib
 popd
 
 echo Copy the shiboken6_generator files
