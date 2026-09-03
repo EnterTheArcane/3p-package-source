@@ -47,7 +47,7 @@ echo Building Pyside6
 
 export CC=/usr/bin/clang
 export CXX=/usr/bin/clang++
-export LLVM_INSTALL_DIR="$TEMP_FOLDER/libclang-release_23.1.0-based-macos-universal/libclang"
+export LLVM_INSTALL_DIR="$TEMP_FOLDER/libclang-release_20.1.3-based-macos-universal/libclang"
 
 cd $TEMP_FOLDER/src
 $TEMP_FOLDER/testenv/bin/python3 setup.py install \

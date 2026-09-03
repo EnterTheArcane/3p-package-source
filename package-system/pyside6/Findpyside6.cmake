@@ -87,7 +87,7 @@ elseif (PAL_PLATFORM_NAME STREQUAL "Mac")
     )
 elseif (PAL_PLATFORM_NAME STREQUAL "Linux")
     set(${MY_NAME}_TOOLS_DEPENDENCIES
-        ${${MY_NAME}_LIB_DIR}/libclang.so.23.1
+        ${${MY_NAME}_LIB_DIR}/libclang.so.20.1
     )
 endif()
 

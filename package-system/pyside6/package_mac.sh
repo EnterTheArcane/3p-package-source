@@ -29,14 +29,18 @@ mkdir -p $PACKAGE_BASE/bin
 cp -r $INSTALL_SOURCE/bin/* $PACKAGE_BASE/bin
 
 echo Making shiboken6 relocatable
-SHIBOKEN_BINARY="$PACKAGE_BASE/bin/shiboken6"
-LIBCLANG_ROOT="$TEMP_FOLDER/libclang-release_23.1.0-based-macos-universal/libclang"
+LIBCLANG_ROOT="$TEMP_FOLDER/libclang-release_20.1.3-based-macos-universal/libclang"
 QT_LIBRARY_PATH="$TEMP_FOLDER/qt-6.11.2-rev1-mac-arm64/qt/lib"
 
-install_name_tool -delete_rpath "$LIBCLANG_ROOT/lib" "$SHIBOKEN_BINARY"
-install_name_tool -delete_rpath "$QT_LIBRARY_PATH" "$SHIBOKEN_BINARY"
-install_name_tool -add_rpath @loader_path/../lib "$SHIBOKEN_BINARY"
-install_name_tool -add_rpath ./../lib "$SHIBOKEN_BINARY"
+make_shiboken_relocatable() {
+    local shiboken_binary=$1
+    install_name_tool -delete_rpath "$LIBCLANG_ROOT/lib" "$shiboken_binary"
+    install_name_tool -delete_rpath "$QT_LIBRARY_PATH" "$shiboken_binary"
+    install_name_tool -add_rpath @loader_path/../lib "$shiboken_binary"
+    install_name_tool -add_rpath ./../lib "$shiboken_binary"
+}
+
+make_shiboken_relocatable "$PACKAGE_BASE/bin/shiboken6"
 
 echo Copy the lib folder
 mkdir -p $PACKAGE_BASE/lib
@@ -67,6 +71,7 @@ popd
 echo Copy the shiboken6_generator files
 mkdir -p $PACKAGE_BASE/shiboken6_generator
 cp -r $INSTALL_SOURCE/shiboken6_generator/* $PACKAGE_BASE/shiboken6_generator/
+make_shiboken_relocatable "$PACKAGE_BASE/shiboken6_generator/shiboken6"
 
 # Add additional files needed for pip install
 cp $TEMP_FOLDER/../__init__.py $PACKAGE_BASE/lib/python3.10/site-packages/

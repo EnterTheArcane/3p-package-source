@@ -53,8 +53,8 @@ mkdir %PACKAGE_BASE%\shiboken6_generator
 robocopy %INSTALL_SOURCE%\shiboken6_generator %PACKAGE_BASE%\shiboken6_generator *.* /E
 
 REM Copy over libclang and its license file
-copy %TEMP_FOLDER%\libclang-release_23.1.0-based-windows-vs2022_64\libclang\bin\libclang.dll %PACKAGE_BASE%\bin\
-copy %TEMP_FOLDER%\libclang-release_23.1.0-based-windows-vs2022_64\libclang\include\llvm\Support\LICENSE.TXT %PACKAGE_BASE%\LICENSE.LIBCLANG.TXT
+copy %TEMP_FOLDER%\libclang-release_20.1.3-based-windows-vs2019_64\libclang\bin\libclang.dll %PACKAGE_BASE%\bin\
+copy %TEMP_FOLDER%\libclang-release_20.1.3-based-windows-vs2019_64\libclang\include\llvm\Support\LICENSE.TXT %PACKAGE_BASE%\LICENSE.LIBCLANG.TXT
 
 REM Copy the lib (release) folder
 

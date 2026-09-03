@@ -17,6 +17,19 @@ echo TARGET_INSTALL_ROOT=$TARGET_INSTALL_ROOT
 
 PACKAGE_BASE=$TARGET_INSTALL_ROOT
 
+case "$(uname -m)" in
+    x86_64)
+        LIBCLANG_PACKAGE=libclang-release_20.1.3-based-linux-Ubuntu22.04-gcc11.4-x86_64
+        ;;
+    aarch64)
+        LIBCLANG_PACKAGE=libclang-release_20.1.3-based-linux-Debian-11.6-gcc10.2-arm64
+        ;;
+    *)
+        echo "Unsupported Linux architecture: $(uname -m)"
+        exit 1
+        ;;
+esac
+
 # Add additional files needed for pip install
 INSTALL_SOURCE=$TEMP_FOLDER/src/build/testenva/install
 
@@ -36,8 +49,8 @@ mkdir -p $PACKAGE_BASE/lib
 cp -r $INSTALL_SOURCE/lib/* $PACKAGE_BASE/lib/
 
 echo Copy libclang and its license file
-LIBCLANG_ROOT="$TEMP_FOLDER/libclang-release_23.1.0-based-linux-Rhel9.6-gcc11.4-x86_64/libclang"
-cp "$LIBCLANG_ROOT/lib/libclang.so.23.1.0" "$PACKAGE_BASE/lib/libclang.so.23.1"
+LIBCLANG_ROOT="$TEMP_FOLDER/$LIBCLANG_PACKAGE/libclang"
+cp "$LIBCLANG_ROOT/lib/libclang.so.20.1.3" "$PACKAGE_BASE/lib/libclang.so.20.1"
 cp "$LIBCLANG_ROOT/include/llvm/Support/LICENSE.TXT" "$PACKAGE_BASE/LICENSE.LIBCLANG.TXT"
 
 echo 'Patching the RPATHS of all site-packages shared libraries to remove absolute paths and set them to $ORIGIN'
