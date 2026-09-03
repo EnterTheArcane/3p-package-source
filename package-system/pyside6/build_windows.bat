@@ -64,7 +64,7 @@ echo "Installing build dependencies"
 
 ECHO Building Pyside2 (Release)
 
-set LLVM_INSTALL_DIR=%TEMP_FOLDER%\libclang-release_20.1.3-based-windows-vs2019_64\libclang
+set LLVM_INSTALL_DIR=%TEMP_FOLDER%\libclang-release_23.1.0-based-windows-vs2022_64\libclang
 set PATH=%LLVM_INSTALL_DIR%\bin;%PATH%
 
 call %TEMP_FOLDER%\testenv\Scripts\python.exe setup.py install ^

@@ -45,18 +45,9 @@ echo "Installing build dependencies"
 
 echo Building Pyside6
 
-# pyside6 6.11.2 fails to build with the default Apple Clang compiler and the latest version of llvm (22 at the time of writing),
-# so we need to use llvm 20 instead. 
-
-if [[ $(brew list | grep llvm@20 | wc -l) -eq 0 ]]; then
-    echo "llvm@20 is not installed. Installing..."
-    brew install llvm@20
-fi
-
-export PATH="/opt/homebrew/opt/llvm@20/bin:$PATH"
-export LDFLAGS="-L/opt/homebrew/opt/llvm@20/lib"
-export CPPFLAGS="-I/opt/homebrew/opt/llvm@20/include"
-export CMAKE_PREFIX_PATH="/opt/homebrew/opt/llvm@20"
+export CC=/usr/bin/clang
+export CXX=/usr/bin/clang++
+export LLVM_INSTALL_DIR="$TEMP_FOLDER/libclang-release_23.1.0-based-macos-universal/libclang"
 
 cd $TEMP_FOLDER/src
 $TEMP_FOLDER/testenv/bin/python3 setup.py install \

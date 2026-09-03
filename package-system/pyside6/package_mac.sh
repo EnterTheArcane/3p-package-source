@@ -10,6 +10,8 @@
 
 # TEMP_FOLDER and TARGET_INSTALL_ROOT get set from the pull_and_build_from_git.py script
 
+set -euo pipefail
+
 echo TEMP_FOLDER=$TEMP_FOLDER
 echo TARGET_INSTALL_ROOT=$TARGET_INSTALL_ROOT
 
@@ -26,14 +28,21 @@ echo Copy the bin folder
 mkdir -p $PACKAGE_BASE/bin
 cp -r $INSTALL_SOURCE/bin/* $PACKAGE_BASE/bin
 
-echo Patching shiboken6 to set the rpath to $ORIGIN
-# Add relative RPATH to shiboken6 so that it can find shared libraries for Qt6 based on the CWD that is set in the custom command 
-# in Findpyside6.cmake to run shiboken
-patchelf --set-rpath '$ORIGIN:./../lib' $PACKAGE_BASE/bin/shiboken6
+echo Making shiboken6 relocatable
+SHIBOKEN_BINARY="$PACKAGE_BASE/bin/shiboken6"
+LIBCLANG_ROOT="$TEMP_FOLDER/libclang-release_23.1.0-based-macos-universal/libclang"
+QT_LIBRARY_PATH="$TEMP_FOLDER/qt-6.11.2-rev1-mac-arm64/qt/lib"
+
+install_name_tool -delete_rpath "$LIBCLANG_ROOT/lib" "$SHIBOKEN_BINARY"
+install_name_tool -delete_rpath "$QT_LIBRARY_PATH" "$SHIBOKEN_BINARY"
+install_name_tool -add_rpath @loader_path/../lib "$SHIBOKEN_BINARY"
+install_name_tool -add_rpath ./../lib "$SHIBOKEN_BINARY"
 
 echo Copy the lib folder
 mkdir -p $PACKAGE_BASE/lib
 cp -r $INSTALL_SOURCE/lib/* $PACKAGE_BASE/lib/
+cp "$LIBCLANG_ROOT/lib/libclang.dylib" "$PACKAGE_BASE/lib/"
+cp "$LIBCLANG_ROOT/include/llvm/Support/LICENSE.TXT" "$PACKAGE_BASE/LICENSE.LIBCLANG.TXT"
 
 
 echo Make the include folder

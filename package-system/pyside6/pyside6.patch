@@ -85,3 +85,15 @@ index b8e9152..26746ce 100644
 +            message(WARNING "${directory} does not exist and will not be installed")
 +        endif()
      endforeach()
+diff --git a/sources/pyside6/cmake/Macros/PySideModules.cmake b/sources/pyside6/cmake/Macros/PySideModules.cmake
+index c54b86994..0bdb35dcc 100644
+--- a/sources/pyside6/cmake/Macros/PySideModules.cmake
++++ b/sources/pyside6/cmake/Macros/PySideModules.cmake
+@@ -213,5 +213,7 @@ macro(create_pyside_module module_name)
+     if (CMAKE_CROSSCOMPILING)
+         list(APPEND shiboken_command "--platform=${CMAKE_SYSTEM_NAME}"
+                                      "--arch=${CMAKE_SYSTEM_PROCESSOR}"
+                                      "--compiler-path=${CMAKE_CXX_COMPILER}")
++    elseif(CMAKE_HOST_APPLE)
++        list(APPEND shiboken_command "--compiler-path=${CMAKE_CXX_COMPILER}")
+     endif()

@@ -10,6 +10,8 @@
 
 # TEMP_FOLDER and TARGET_INSTALL_ROOT get set from the pull_and_build_from_git.py script
 
+set -euo pipefail
+
 echo TEMP_FOLDER=$TEMP_FOLDER
 echo TARGET_INSTALL_ROOT=$TARGET_INSTALL_ROOT
 
@@ -26,12 +28,17 @@ echo Copy the bin folder
 mkdir -p $PACKAGE_BASE/bin
 cp -r $INSTALL_SOURCE/bin/* $PACKAGE_BASE/bin
 
-echo Patching shiboken6 to set the rpath to $ORIGIN
-patchelf --set-rpath '$ORIGIN' $PACKAGE_BASE/bin/shiboken6
+echo Patching shiboken6 to use relative library paths
+patchelf --set-rpath '$ORIGIN:$ORIGIN/../lib' $PACKAGE_BASE/bin/shiboken6
 
 echo Copy the lib folder
 mkdir -p $PACKAGE_BASE/lib
 cp -r $INSTALL_SOURCE/lib/* $PACKAGE_BASE/lib/
+
+echo Copy libclang and its license file
+LIBCLANG_ROOT="$TEMP_FOLDER/libclang-release_23.1.0-based-linux-Rhel9.6-gcc11.4-x86_64/libclang"
+cp "$LIBCLANG_ROOT/lib/libclang.so.23.1.0" "$PACKAGE_BASE/lib/libclang.so.23.1"
+cp "$LIBCLANG_ROOT/include/llvm/Support/LICENSE.TXT" "$PACKAGE_BASE/LICENSE.LIBCLANG.TXT"
 
 echo Patching the RPATHS of the all site-packages shared libraries to removve absolute paths and set them to $ORIGIN
 find $PACKAGE_BASE/lib/python3.10/site-packages/PySide6/ -name "*.so*" -exec patchelf --set-rpath '$ORIGIN:$ORIGIN/../shiboken6' {} \;

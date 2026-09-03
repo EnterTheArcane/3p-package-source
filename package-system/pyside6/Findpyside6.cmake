@@ -81,6 +81,14 @@ if (PAL_PLATFORM_NAME STREQUAL "Windows")
     set(${MY_NAME}_TOOLS_DEPENDENCIES
         ${${MY_NAME}_BIN_DIR}/libclang.dll
     )
+elseif (PAL_PLATFORM_NAME STREQUAL "Mac")
+    set(${MY_NAME}_TOOLS_DEPENDENCIES
+        ${${MY_NAME}_LIB_DIR}/libclang.dylib
+    )
+elseif (PAL_PLATFORM_NAME STREQUAL "Linux")
+    set(${MY_NAME}_TOOLS_DEPENDENCIES
+        ${${MY_NAME}_LIB_DIR}/libclang.so.23.1
+    )
 endif()
 
 add_library(${MY_NAME}::Tools SHARED IMPORTED GLOBAL)
