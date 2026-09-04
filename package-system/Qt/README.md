@@ -45,28 +45,28 @@ Package names follow `qt-${package_version}-${platform}`.
 
 ## Building
 
-Run these commands from the `3p-package-source` repository. Adjust the relative `3p-package-scripts` path if the repositories are laid out differently.
+Run these commands from the `3p-package-source` repository.
 
 ### Windows x64
 
 ```bat
-python ..\3p-package-scripts\o3de_package_scripts\build_package.py --search_path . qt-6.11.2-rev1-windows
+./package.bat build qt-6.11.2-rev1-windows
 ```
 
 ### Linux x86_64
 
 ```bash
-python3 ../3p-package-scripts/o3de_package_scripts/build_package.py --search_path . qt-6.11.2-rev1-linux
+./package.sh build qt-6.11.2-rev1-linux
 ```
 
 ### Linux aarch64
 
 ```bash
-python3 ../3p-package-scripts/o3de_package_scripts/build_package.py --search_path . qt-6.11.2-rev1-linux-aarch64
+./package.sh build qt-6.11.2-rev1-linux-aarch64
 ```
 
 ### macOS arm64
 
 ```bash
-python3 ../3p-package-scripts/o3de_package_scripts/build_package.py --search_path . qt-6.11.2-rev1-mac-arm64
+./package.sh build qt-6.11.2-rev1-mac-arm64
 ```
