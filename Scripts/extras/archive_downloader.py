@@ -106,8 +106,7 @@ def _strip_tar_top_level(tar_file):
     top_level_names = set()
 
     for member in members:
-        member_parts = pathlib.PurePosixPath(member.name).parts
-        if not member_parts:
+        if not (member_parts := pathlib.PurePosixPath(member.name).parts):
             continue
         if member_parts[0] == '/' or '..' in member_parts:
             raise RuntimeError(f"Archive contains an unsafe path: {member.name}")
