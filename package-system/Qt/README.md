@@ -8,18 +8,18 @@
 
 ## Sources and targets
 
-The active Qt 6 packages use the official Qt 6.11.2 source archive:
+The active Qt 6 packages use the official Qt 6.12.0 source archive:
 
-`https://download.qt.io/official_releases/qt/6.11/6.11.2/single/qt-everywhere-src-6.11.2.tar.xz`
+`https://download.qt.io/official_releases/qt/6.12/6.12.0/single/qt-everywhere-src-6.12.0.tar.xz`
 
-The archive is verified with SHA-1 `7e15dbb24d8d390b04fb53bb7397a2f625608132`.
+The archive is verified with SHA-1 `1c80692d233922156bcd54ac1ec30099d7245f49`.
 
 | Target | Package |
 | --- | --- |
-| Windows x64 | `qt-6.11.2-rev1-windows` |
-| Linux x86_64 | `qt-6.11.2-rev1-linux` |
-| Linux aarch64 | `qt-6.11.2-rev1-linux-aarch64` |
-| macOS arm64 | `qt-6.11.2-rev1-mac-arm64` |
+| Windows x64 | `qt-6.12.0-rev1-windows` |
+| Linux x86_64 | `qt-6.12.0-rev1-linux` |
+| Linux aarch64 | `qt-6.12.0-rev1-linux-aarch64` |
+| macOS arm64 | `qt-6.12.0-rev1-mac-arm64` |
 
 ## Qt 6 build contents
 
@@ -50,23 +50,23 @@ Run these commands from the `3p-package-source` repository.
 ### Windows x64
 
 ```bat
-./package.bat build qt-6.11.2-rev1-windows
+./package.bat build qt-6.12.0-rev1-windows
 ```
 
 ### Linux x86_64
 
 ```bash
-./package.sh build qt-6.11.2-rev1-linux
+./package.sh build qt-6.12.0-rev1-linux
 ```
 
 ### Linux aarch64
 
 ```bash
-./package.sh build qt-6.11.2-rev1-linux-aarch64
+./package.sh build qt-6.12.0-rev1-linux-aarch64
 ```
 
 ### macOS arm64
 
 ```bash
-./package.sh build qt-6.11.2-rev1-mac-arm64
+./package.sh build qt-6.12.0-rev1-mac-arm64
 ```
