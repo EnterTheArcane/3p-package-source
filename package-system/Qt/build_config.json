@@ -7,7 +7,7 @@
     "src_package_sha1": "1c80692d233922156bcd54ac1ec30099d7245f49",
     "src_package_strip_top_level": true,
     "patch_file": "recursion-check.patch",
-    "package_version": "6.12.0-rev1",
+    "package_version": "6.12.0-rev2",
     "cmake_find_source": "FindQt.cmake",
     "cmake_find_target": "FindQt.cmake",
     "Platforms": {

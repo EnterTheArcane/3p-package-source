@@ -84,6 +84,7 @@ QT_PLATFORM_OPTS="-skip qtdeclarative \
     -system-tiff \
     -system-zlib \
     -openssl-linked \
+    -qt-libjpeg \
     -qt-webp \
     -no-jasper \
     -no-mng \
