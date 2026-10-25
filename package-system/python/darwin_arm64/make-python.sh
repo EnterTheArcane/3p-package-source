@@ -95,7 +95,7 @@ if [ "$USING_PACKAGE_BUILDER" -eq 0 ]; then
     echo ""
     echo "---------------- Cloning python from git ----------------"
     echo ""
-    git clone https://github.com/python/cpython.git --branch "v3.14.8" --depth 1 "$PYTHON_SRC_DIR"
+    git clone https://github.com/python/cpython.git --branch "v3.14.9" --depth 1 "$PYTHON_SRC_DIR"
     retVal=$?
     if [ $retVal -ne 0 ]; then
         echo "Error cloning python from https://github.com/python/cpython.git"
@@ -185,8 +185,8 @@ cd "$RELOC_SRC_DIR"
 echo ""
 echo "---------------- Altering the produced framework folder to be relocatable ----------------"
 echo ""
-echo "$VENV_BIN_DIR/python3 ./make_relocatable_python_framework.py --no-unsign --python-version 3.14.8 --use-existing-framework $FRAMEWORK_OUTPUT_FOLDER/Python.framework"
-"$VENV_BIN_DIR/python3" ./make_relocatable_python_framework.py --no-unsign --python-version 3.14.8 --use-existing-framework "$FRAMEWORK_OUTPUT_FOLDER/Python.framework"
+echo "$VENV_BIN_DIR/python3 ./make_relocatable_python_framework.py --no-unsign --python-version 3.14.9 --use-existing-framework $FRAMEWORK_OUTPUT_FOLDER/Python.framework"
+"$VENV_BIN_DIR/python3" ./make_relocatable_python_framework.py --no-unsign --python-version 3.14.9 --use-existing-framework "$FRAMEWORK_OUTPUT_FOLDER/Python.framework"
 retVal=$?
 if [ $retVal -ne 0 ]; then
     echo "Could not make python relocatable!"
