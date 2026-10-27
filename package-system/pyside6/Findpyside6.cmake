@@ -25,7 +25,7 @@ set(${MY_NAME}_INCLUDE_DIR ${PYSIDE_BASE_PATH}/include)
 if (PAL_PLATFORM_NAME STREQUAL "Windows")
     ly_pip_install_local_package_editable(${${MY_NAME}_LIB_DIR}/site-packages PySide6)
 elseif (PAL_PLATFORM_NAME STREQUAL "Linux" OR PAL_PLATFORM_NAME STREQUAL "Mac")
-    ly_pip_install_local_package_editable(${PYSIDE_BASE_PATH}/lib/python3.10/site-packages PySide6)
+    ly_pip_install_local_package_editable(${PYSIDE_BASE_PATH}/lib/python3.14/site-packages PySide6)
 endif()
 
 if (PAL_PLATFORM_NAME STREQUAL "Linux" OR PAL_PLATFORM_NAME STREQUAL "Mac")
@@ -47,7 +47,6 @@ ly_target_include_system_directories(TARGET ${TARGET_WITH_NAMESPACE}
         ${${MY_NAME}_INCLUDE_DIR}/PySide6/QtNetwork
         ${${MY_NAME}_INCLUDE_DIR}/PySide6/QtOpenGL
         ${${MY_NAME}_INCLUDE_DIR}/PySide6/QtOpenGLWidgets
-        ${${MY_NAME}_INCLUDE_DIR}/PySide6/QtSql
         ${${MY_NAME}_INCLUDE_DIR}/PySide6/QtSvg
         ${${MY_NAME}_INCLUDE_DIR}/PySide6/QtSvgWidgets
         ${${MY_NAME}_INCLUDE_DIR}/PySide6/QtUiTools
@@ -81,6 +80,14 @@ set(${MY_NAME}_TOOLS_PYTHON_SCRIPTS
 if (PAL_PLATFORM_NAME STREQUAL "Windows")
     set(${MY_NAME}_TOOLS_DEPENDENCIES
         ${${MY_NAME}_BIN_DIR}/libclang.dll
+    )
+elseif (PAL_PLATFORM_NAME STREQUAL "Mac")
+    set(${MY_NAME}_TOOLS_DEPENDENCIES
+        ${${MY_NAME}_LIB_DIR}/libclang.dylib
+    )
+elseif (PAL_PLATFORM_NAME STREQUAL "Linux")
+    set(${MY_NAME}_TOOLS_DEPENDENCIES
+        ${${MY_NAME}_LIB_DIR}/libclang.so.20.1
     )
 endif()
 
