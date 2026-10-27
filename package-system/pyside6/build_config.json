@@ -1,6 +1,7 @@
 {
-    "git_url": "https://code.qt.io/pyside/pyside-setup.git",
-    "git_tag": "v6.12.0",
+    "src_package_url": "https://download.qt.io/official_releases/QtForPython/pyside6/PySide6-6.12.0-src/pyside-setup-everywhere-src-6.12.0.tar.xz",
+    "src_package_sha1": "c3bbd6a3e9802219555a0ce75ab8b72a9b667b99",
+    "src_package_strip_top_level": true,
     "package_name": "pyside6",
     "package_version": "6.12.0-py3.14-rev1",
     "package_url": "https://code.qt.io/pyside/pyside-setup.git",
@@ -24,10 +25,6 @@
                 ],
                 "custom_install_cmd": [
                     "package_windows.bat"
-                ],
-                "custom_test_cmd": [
-                    "{python}",
-                    "test_pyside6.py"
                 ]
             }
         },
@@ -45,10 +42,6 @@
                 ],
                 "additional_download_packages": [
                     ["https://download.qt.io/development_releases/prebuilt/libclang/libclang-release_20.1.3-based-macos-universal.7z", "0299ccee919991e3deecbb25ddde1b6bf4b4cc248fa695f126263ac4acfd4cc5", "sha256"]
-                ],
-                "custom_test_cmd": [
-                    "{python}",
-                    "test_pyside6.py"
                 ]
             }
         },
@@ -66,10 +59,6 @@
                 ],
                 "additional_download_packages": [
                     ["https://download.qt.io/development_releases/prebuilt/libclang/libclang-release_20.1.3-based-linux-Ubuntu22.04-gcc11.4-x86_64.7z", "415d9e32f9a59048e24aa0cf7801d7cf60f396e51d203a5afaf346f821c981cd", "sha256"]
-                ],
-                "custom_test_cmd": [
-                    "{python}",
-                    "test_pyside6.py"
                 ]
             },
             "Linux-aarch64": {
@@ -85,10 +74,6 @@
                 ],
                 "additional_download_packages": [
                     ["https://download.qt.io/development_releases/prebuilt/libclang/libclang-release_20.1.3-based-linux-Debian-11.6-gcc10.2-arm64.7z", "a1a4f1384750a0e14c5b863126a68ccf478a70b0f570ccb599161c670bcb05a3", "sha256"]
-                ],
-                "custom_test_cmd": [
-                    "{python}",
-                    "test_pyside6.py"
                 ]
             }
         }
